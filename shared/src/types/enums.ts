@@ -1,0 +1,66 @@
+export enum ListingStatus {
+  ACTIVE = 'ACTIVE',
+  PENDING = 'PENDING',
+  SOLD = 'SOLD',
+  REMOVED = 'REMOVED',
+}
+
+export enum ConditionType {
+  NEW = 'NEW',
+  LIKE_NEW = 'LIKE_NEW',
+  GOOD = 'GOOD',
+  FAIR = 'FAIR',
+  POOR = 'POOR',
+}
+
+export enum OrderStatus {
+  PLACED = 'PLACED',
+  CONFIRMED = 'CONFIRMED',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum PaymentMethod {
+  ONLINE = 'ONLINE',
+  COD = 'COD',
+}
+
+export enum PaymentStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  PENDING_COLLECTION = 'PENDING_COLLECTION',
+}
+
+export enum UserRole {
+  STUDENT = 'STUDENT',
+  ADMIN = 'ADMIN',
+}
+
+export enum Mode {
+  BUY = 'BUY',
+  SELL = 'SELL',
+}
+
+export enum PickupPreference {
+  ON_CAMPUS = 'ON_CAMPUS',
+  HOSTEL_GATE = 'HOSTEL_GATE',
+  DEPARTMENT = 'DEPARTMENT',
+}
+
+export enum OtpPurpose {
+  VERIFY_EMAIL = 'VERIFY_EMAIL',
+  RESET_PASSWORD = 'RESET_PASSWORD',
+}
+
+export enum NotificationType {
+  ORDER_PLACED = 'ORDER_PLACED',
+  ORDER_CONFIRMED = 'ORDER_CONFIRMED',
+  ORDER_COMPLETED = 'ORDER_COMPLETED',
+  ORDER_CANCELLED = 'ORDER_CANCELLED',
+  PAYMENT_RECEIVED = 'PAYMENT_RECEIVED',
+  NEW_MESSAGE = 'NEW_MESSAGE',
+  NEW_REVIEW = 'NEW_REVIEW',
+  LISTING_REMOVED = 'LISTING_REMOVED',
+  ACCOUNT_SUSPENDED = 'ACCOUNT_SUSPENDED',
+}

@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: resello-mongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - resello-mongo-data:/data/db
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: resello-mailpit
+    ports:
+      - '1025:1025'   # SMTP
+      - '8025:8025'   # Web UI
+    restart: unless-stopped
+
+volumes:
+  resello-mongo-data:

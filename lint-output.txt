@@ -1,0 +1,1517 @@
+validating docs\openapi.yaml...
+{
+  "totals": {
+    "errors": 12,
+    "warnings": 143,
+    "ignored": 0
+  },
+  "version": "1.34.20",
+  "problems": [
+    {
+      "ruleId": "security-defined",
+      "severity": "error",
+      "message": "Every operation should have security defined on it or on the root level.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1register/post",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "security-defined",
+      "severity": "error",
+      "message": "Every operation should have security defined on it or on the root level.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1verify-email/post",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "security-defined",
+      "severity": "error",
+      "message": "Every operation should have security defined on it or on the root level.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1resend-otp/post",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "security-defined",
+      "severity": "error",
+      "message": "Every operation should have security defined on it or on the root level.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1login/post",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "security-defined",
+      "severity": "error",
+      "message": "Every operation should have security defined on it or on the root level.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1logout/post",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "security-defined",
+      "severity": "error",
+      "message": "Every operation should have security defined on it or on the root level.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1refresh/post",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "security-defined",
+      "severity": "error",
+      "message": "Every operation should have security defined on it or on the root level.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1forgot-password/post",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "security-defined",
+      "severity": "error",
+      "message": "Every operation should have security defined on it or on the root level.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1reset-password/post",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "security-defined",
+      "severity": "error",
+      "message": "Every operation should have security defined on it or on the root level.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1listings/get",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "security-defined",
+      "severity": "error",
+      "message": "Every operation should have security defined on it or on the root level.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1listings~1nearby/get",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "security-defined",
+      "severity": "error",
+      "message": "Every operation should have security defined on it or on the root level.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1listings~1{id}/get",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "security-defined",
+      "severity": "error",
+      "message": "Every operation should have security defined on it or on the root level.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1payments~1webhook/post",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "info-license",
+      "severity": "warn",
+      "message": "Info object should contain `license` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/info",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1register/post/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1register/post/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1verify-email/post/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1verify-email/post/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1resend-otp/post/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1resend-otp/post/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1login/post/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1login/post/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1logout/post/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1logout/post/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1logout/post/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1refresh/post/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1refresh/post/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1refresh/post/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1forgot-password/post/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1forgot-password/post/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1forgot-password/post/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1reset-password/post/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1reset-password/post/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1reset-password/post/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1me/get/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1me/get/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1auth~1me/get/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1me~1mode/patch/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1me~1mode/patch/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1me~1mode/patch/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1me~1seller-onboarding/post/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1me~1seller-onboarding/post/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1me~1seller-onboarding/post/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1me~1badges/get/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1me~1badges/get/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1me~1badges/get/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1listings/get/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1listings/get/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1listings/get/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1listings~1nearby/get/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1listings~1nearby/get/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1listings~1nearby/get/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1listings~1{id}/get/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1listings~1{id}/get/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1cart~1items/get/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1cart~1items/get/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1cart~1items/get/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1cart~1items/post/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1cart~1items/post/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1cart~1items~1{listingId}/delete/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1cart~1items~1{listingId}/delete/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1cart~1items~1{listingId}/delete/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1checkout/post/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1checkout/post/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1payments~1verify/post/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1payments~1verify/post/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1payments~1verify/post/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1payments~1webhook/post/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1payments~1webhook/post/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1payments~1webhook/post/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1orders/get/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1orders/get/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1orders/get/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1orders~1{id}/get/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1orders~1{id}/get/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1orders~1{id}~1cancel/post/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1orders~1{id}~1cancel/post/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1orders~1{id}~1confirm-receipt/post/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1orders~1{id}~1confirm-receipt/post/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1orders~1{id}~1confirm-receipt/post/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1wishlist/get/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1wishlist/get/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1wishlist/get/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1wishlist/post/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1wishlist/post/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1wishlist/post/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1wishlist~1{listingId}/delete/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1wishlist~1{listingId}/delete/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1wishlist~1{listingId}/delete/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1reviews/post/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1reviews/post/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1seller~1dashboard/get/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1seller~1dashboard/get/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1seller~1dashboard/get/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1seller~1listings/get/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1seller~1listings/get/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1seller~1listings/get/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1seller~1listings/post/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-summary",
+      "severity": "warn",
+      "message": "Operation object should contain `summary` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1seller~1listings/post/summary",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-4xx-response",
+      "severity": "warn",
+      "message": "Operation must have at least one `4XX` response.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1seller~1listings/post/responses",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    },
+    {
+      "ruleId": "operation-operationId",
+      "severity": "warn",
+      "message": "Operation object should contain `operationId` field.",
+      "location": [
+        {
+          "source": {
+            "ref": "docs\\openapi.yaml"
+          },
+          "pointer": "#/paths/~1api~1seller~1listings~1{id}/put/operationId",
+          "reportOnKey": true
+        }
+      ],
+      "suggest": []
+    }
+  ]
+< ... 55 more problems hidden > increase with `--max-problems N`
+docs\openapi.yaml: validated in 145ms
+
+Γ¥î Validation failed with 12 errors and 143 warnings.
+run `redocly lint --generate-ignore-file` to add all problems to the ignore file.
+
+}

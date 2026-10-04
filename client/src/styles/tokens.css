@@ -1,0 +1,51 @@
+:root {
+  /* Brand */
+  --brand-slate: #2C3E50;
+
+  /* Buy mode */
+  --buy-primary: #0F766E;
+  --buy-tint: #E6F4F1;
+
+  /* Sell mode */
+  --sell-primary: #4338CA;
+  --sell-tint: #ECEBFF;
+
+  /* Call to action */
+  --cta: #C2410C;
+  --cta-hover: #9A3412;
+
+  /* Text */
+  --text: #1F2937;
+  --text-muted: #4B5563;
+
+  /* Surfaces */
+  --surface: #FFFFFF;
+  --bg: #F5F7FA;
+
+  /* Status */
+  --success: #15803D;
+  --warning: #B45309;
+  --danger: #B91C1C;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --text-body: 0.875rem;      /* 14px mobile */
+  --text-body-lg: 1rem;       /* 16px */
+
+  /* Radius */
+  --radius-card: 12px;
+
+  /* Motion */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-normal: 0ms;
+    --duration-slow: 0ms;
+  }
+}

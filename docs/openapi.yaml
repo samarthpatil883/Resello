@@ -1,0 +1,1254 @@
+openapi: 3.0.3
+info:
+  title: Resello API
+  version: 1.0.0
+  description: Single source of truth for the Resello API.
+servers:
+  - url: /
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: accessToken
+  parameters:
+    pageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+    limitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 10
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+    User:
+      type: object
+      properties:
+        _id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string, enum: [STUDENT, ADMIN] }
+        emailVerifiedAt: { type: string, nullable: true }
+        lastActiveMode: { type: string, enum: [BUY, SELL] }
+        sellerOnboardedAt: { type: string, nullable: true }
+        campusLocation: { $ref: '#/components/schemas/GeoJSONPoint' }
+        pickupPreference: { type: string, enum: [ON_CAMPUS, HOSTEL_GATE, DEPARTMENT], nullable: true }
+        phone: { type: string, nullable: true }
+        isSuspended: { type: boolean }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+    GeoJSONPoint:
+      type: object
+      properties:
+        type: { type: string, enum: [Point] }
+        coordinates:
+          type: array
+          items: { type: number }
+          description: "[lng, lat]"
+    Category:
+      type: object
+      properties:
+        _id: { type: string }
+        name: { type: string }
+        slug: { type: string }
+        icon: { type: string }
+    Listing:
+      type: object
+      properties:
+        _id: { type: string }
+        seller: { $ref: '#/components/schemas/User' }
+        title: { type: string }
+        category: { $ref: '#/components/schemas/Category' }
+        condition: { type: string, enum: [NEW, LIKE_NEW, GOOD, FAIR, POOR] }
+        price: { type: number }
+        description: { type: string }
+        images:
+          type: array
+          items: { $ref: '#/components/schemas/ProductImage' }
+        location: { $ref: '#/components/schemas/GeoJSONPoint' }
+        status: { type: string, enum: [ACTIVE, PENDING, SOLD, REMOVED] }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+    ProductImage:
+      type: object
+      properties:
+        url: { type: string }
+        publicId: { type: string }
+        width: { type: integer }
+        height: { type: integer }
+    Cart:
+      type: object
+      properties:
+        _id: { type: string }
+        user: { $ref: '#/components/schemas/User' }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/CartItem' }
+    CartItem:
+      type: object
+      properties:
+        listing: { $ref: '#/components/schemas/Listing' }
+        addedAt: { type: string }
+    Order:
+      type: object
+      properties:
+        _id: { type: string }
+        listing: { $ref: '#/components/schemas/Listing' }
+        buyer: { $ref: '#/components/schemas/User' }
+        seller: { $ref: '#/components/schemas/User' }
+        price: { type: number }
+        status: { type: string, enum: [PLACED, CONFIRMED, COMPLETED, CANCELLED] }
+        payment: { $ref: '#/components/schemas/Payment' }
+        deliveryNotes: { type: string }
+        cancelReason: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+    Payment:
+      type: object
+      properties:
+        _id: { type: string }
+        order: { $ref: '#/components/schemas/Order' }
+        method: { type: string, enum: [ONLINE, COD] }
+        status: { type: string, enum: [PENDING, COMPLETED, FAILED, PENDING_COLLECTION] }
+        amount: { type: number }
+        transactionRef: { type: string }
+        razorpayOrderId: { type: string }
+        razorpayPaymentId: { type: string }
+        createdAt: { type: string }
+    Message:
+      type: object
+      properties:
+        _id: { type: string }
+        sender: { $ref: '#/components/schemas/User' }
+        recipient: { $ref: '#/components/schemas/User' }
+        listing: { $ref: '#/components/schemas/Listing' }
+        content: { type: string }
+        readAt: { type: string }
+        createdAt: { type: string }
+    Review:
+      type: object
+      properties:
+        _id: { type: string }
+        order: { $ref: '#/components/schemas/Order' }
+        reviewer: { $ref: '#/components/schemas/User' }
+        seller: { $ref: '#/components/schemas/User' }
+        rating: { type: integer }
+        comment: { type: string }
+        createdAt: { type: string }
+    WishlistItem:
+      type: object
+      properties:
+        _id: { type: string }
+        user: { $ref: '#/components/schemas/User' }
+        listing: { $ref: '#/components/schemas/Listing' }
+        addedAt: { type: string }
+    Notification:
+      type: object
+      properties:
+        _id: { type: string }
+        user: { $ref: '#/components/schemas/User' }
+        type: { type: string }
+        title: { type: string }
+        body: { type: string }
+        mode: { type: string, enum: [BUY, SELL] }
+        relatedId: { type: string }
+        readAt: { type: string }
+        createdAt: { type: string }
+paths:
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string }
+                password: { type: string }
+                confirmPassword: { type: string }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: 'VERIFICATION_REQUIRED' }
+                  resendAvailableInSec: { type: integer }
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '409':
+          description: Email taken
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /api/auth/verify-email:
+    post:
+      tags: [Auth]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                code: { type: string }
+      responses:
+        '200':
+          description: Verified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+                  accessToken: { type: string }
+        '400':
+          description: OTP error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /api/auth/resend-otp:
+    post:
+      tags: [Auth]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                purpose: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resendAvailableInSec: { type: integer }
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+        '400':
+          description: Domain error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '403':
+          description: Email not verified / suspended
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/auth/refresh:
+    post:
+      tags: [Auth]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/auth/forgot-password:
+    post:
+      tags: [Auth]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+  /api/auth/reset-password:
+    post:
+      tags: [Auth]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                code: { type: string }
+                newPassword: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+                  badgeCounts:
+                    type: object
+                    properties:
+                      buy: { type: integer }
+                      sell: { type: integer }
+  /api/me/mode:
+    patch:
+      tags: [Account]
+      security:
+        - cookieAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mode: { type: string, enum: [BUY, SELL] }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  lastActiveMode: { type: string }
+  /api/me/seller-onboarding:
+    post:
+      tags: [Account]
+      security:
+        - cookieAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                campusLocation: { $ref: '#/components/schemas/GeoJSONPoint' }
+                pickupPreference: { type: string }
+                phone: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sellerOnboardedAt: { type: string }
+  /api/me/badges:
+    get:
+      tags: [Account]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  buy: { type: integer }
+                  sell: { type: integer }
+  /api/listings:
+    get:
+      tags: [Listings]
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: category
+          in: query
+          schema: { type: string }
+        - name: minPrice
+          in: query
+          schema: { type: number }
+        - name: maxPrice
+          in: query
+          schema: { type: number }
+        - name: condition
+          in: query
+          schema: { type: string }
+        - name: maxDistance
+          in: query
+          schema: { type: number }
+        - name: minRating
+          in: query
+          schema: { type: number }
+        - name: sort
+          in: query
+          schema: { type: string }
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/limitParam'
+        - name: excludeMine
+          in: query
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  listings:
+                    type: array
+                    items: { $ref: '#/components/schemas/Listing' }
+                  total: { type: integer }
+                  page: { type: integer }
+                  totalPages: { type: integer }
+  /api/listings/nearby:
+    get:
+      tags: [Listings]
+      parameters:
+        - name: lat
+          in: query
+          schema: { type: number }
+        - name: lng
+          in: query
+          schema: { type: number }
+        - name: maxDistance
+          in: query
+          schema: { type: number }
+        - name: limit
+          in: query
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  listings:
+                    type: array
+                    items: { $ref: '#/components/schemas/Listing' }
+  /api/listings/{id}:
+    get:
+      tags: [Listings]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Listing' }
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /api/cart/items:
+    get:
+      tags: [Cart]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                  total: { type: number }
+    post:
+      tags: [Cart]
+      security:
+        - cookieAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                listingId: { type: string }
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /api/cart/items/{listingId}:
+    delete:
+      tags: [Cart]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: listingId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+  /api/checkout:
+    post:
+      tags: [Checkout]
+      security:
+        - cookieAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                paymentMethod: { type: string }
+                deliveryNotes: { type: string }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orders:
+                    type: array
+                    items: { $ref: '#/components/schemas/Order' }
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /api/payments/verify:
+    post:
+      tags: [Checkout]
+      security:
+        - cookieAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                razorpayOrderId: { type: string }
+                razorpayPaymentId: { type: string }
+                razorpaySignature: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  verified: { type: boolean }
+  /api/payments/webhook:
+    post:
+      tags: [Checkout]
+      responses:
+        '200':
+          description: OK
+  /api/orders:
+    get:
+      tags: [Orders]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string }
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/limitParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orders:
+                    type: array
+                    items: { $ref: '#/components/schemas/Order' }
+                  total: { type: integer }
+                  page: { type: integer }
+                  totalPages: { type: integer }
+  /api/orders/{id}:
+    get:
+      tags: [Orders]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /api/orders/{id}/cancel:
+    post:
+      tags: [Orders]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order: { $ref: '#/components/schemas/Order' }
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /api/orders/{id}/confirm-receipt:
+    post:
+      tags: [Orders]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order: { $ref: '#/components/schemas/Order' }
+  /api/wishlist:
+    get:
+      tags: [Wishlist]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/WishlistItem' }
+    post:
+      tags: [Wishlist]
+      security:
+        - cookieAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                listingId: { type: string }
+      responses:
+        '201':
+          description: Created
+  /api/wishlist/{listingId}:
+    delete:
+      tags: [Wishlist]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: listingId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+  /api/reviews:
+    post:
+      tags: [Reviews]
+      security:
+        - cookieAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                orderId: { type: string }
+                rating: { type: integer }
+                comment: { type: string }
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /api/seller/dashboard:
+    get:
+      tags: [Seller]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  activeListings: { type: integer }
+                  ordersToConfirm: { type: integer }
+                  completedSales: { type: integer }
+                  averageRating: { type: number }
+                  salesTotal: { type: number }
+                  salesOnline: { type: number }
+                  salesCod: { type: number }
+                  needsAction:
+                    type: array
+                    items: { $ref: '#/components/schemas/Order' }
+  /api/seller/listings:
+    get:
+      tags: [Seller]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string }
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/limitParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  listings:
+                    type: array
+                    items: { $ref: '#/components/schemas/Listing' }
+                  total: { type: integer }
+                  page: { type: integer }
+                  totalPages: { type: integer }
+    post:
+      tags: [Seller]
+      security:
+        - cookieAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                category: { type: string }
+                condition: { type: string }
+                price: { type: number }
+                description: { type: string }
+                images:
+                  type: array
+                  items: { $ref: '#/components/schemas/ProductImage' }
+                location: { $ref: '#/components/schemas/GeoJSONPoint' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  listing: { $ref: '#/components/schemas/Listing' }
+  /api/seller/listings/{id}:
+    put:
+      tags: [Seller]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  listing: { $ref: '#/components/schemas/Listing' }
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+    delete:
+      tags: [Seller]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '400':
+          description: Reserved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /api/seller/listings/{id}/mark-sold:
+    post:
+      tags: [Seller]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  listing: { $ref: '#/components/schemas/Listing' }
+  /api/seller/uploads/sign:
+    post:
+      tags: [Uploads]
+      security:
+        - cookieAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                folder: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  signature: { type: string }
+                  timestamp: { type: integer }
+                  apiKey: { type: string }
+                  cloudName: { type: string }
+                  folder: { type: string }
+  /api/seller/orders:
+    get:
+      tags: [Seller]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string }
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/limitParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orders:
+                    type: array
+                    items: { $ref: '#/components/schemas/Order' }
+                  total: { type: integer }
+                  page: { type: integer }
+                  totalPages: { type: integer }
+  /api/seller/orders/{id}/confirm:
+    post:
+      tags: [Seller]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order: { $ref: '#/components/schemas/Order' }
+  /api/seller/orders/{id}/cancel:
+    post:
+      tags: [Seller]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order: { $ref: '#/components/schemas/Order' }
+  /api/seller/orders/{id}/cash-received:
+    post:
+      tags: [Seller]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order: { $ref: '#/components/schemas/Order' }
+  /api/seller/reviews:
+    get:
+      tags: [Seller]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reviews:
+                    type: array
+                    items: { $ref: '#/components/schemas/Review' }
+                  averageRating: { type: number }
+                  ratingDistribution: { type: object }
+  /api/messages:
+    get:
+      tags: [Messages]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: listingId
+          in: query
+          schema: { type: string }
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/limitParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  threads:
+                    type: array
+                    items: { type: object }
+    post:
+      tags: [Messages]
+      security:
+        - cookieAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                recipientId: { type: string }
+                listingId: { type: string }
+                content: { type: string }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { $ref: '#/components/schemas/Message' }
+  /api/messages/{id}/read:
+    put:
+      tags: [Messages]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+  /api/notifications:
+    get:
+      tags: [Notifications]
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/limitParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notifications:
+                    type: array
+                    items: { $ref: '#/components/schemas/Notification' }
+  /api/admin/stats:
+    get:
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users: { type: integer }
+                  activeListings: { type: integer }
+                  orders: { type: integer }
+                  revenue: { type: number }
+  /api/admin/moderation:
+    get:
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/limitParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reports:
+                    type: array
+                    items: { type: object }
+  /api/admin/actions/remove-listing:
+    post:
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                listingId: { type: string }
+                reason: { type: string }
+      responses:
+        '200':
+          description: OK
+  /api/admin/actions/suspend-user:
+    post:
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId: { type: string }
+                reason: { type: string }
+      responses:
+        '200':
+          description: OK
+  /api/admin/users:
+    get:
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/limitParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items: { $ref: '#/components/schemas/User' }
+                  total: { type: integer }
+                  page: { type: integer }
+                  totalPages: { type: integer }
+  /api/admin/transactions:
+    get:
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/limitParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transactions:
+                    type: array
+                    items: { type: object }
+                  total: { type: integer }
+                  page: { type: integer }
+                  totalPages: { type: integer }
