@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Start local services
+        run: |
+          cp server/.env.example server/.env
+          docker compose up -d mongo mailpit
+          docker compose exec -T mongo mongosh --quiet --eval "db.adminCommand('ping')"
+      - run: npm run build
+      - run: npm run lint
+      - run: npm run lint:openapi
+      - run: npm test --workspace=server -- --runInBand
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - run: npm run test --workspace=e2e

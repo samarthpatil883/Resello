@@ -25,6 +25,10 @@
   text-decoration: none;
 }
 
+.rs .text-primary-foreground {
+  color: hsl(var(--primary-foreground));
+}
+
 .rs [id] {
   scroll-margin-top: 72px;
 }

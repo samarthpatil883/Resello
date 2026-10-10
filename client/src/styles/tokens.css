@@ -1,36 +1,51 @@
 :root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --primary: 17 88% 40%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 17 88% 40%;
+
   /* Brand */
-  --brand-slate: #2C3E50;
+  --brand-slate: #2c3e50;
 
   /* Buy mode */
-  --buy-primary: #0F766E;
-  --buy-tint: #E6F4F1;
+  --buy-primary: #0f766e;
+  --buy-tint: #e6f4f1;
 
   /* Sell mode */
-  --sell-primary: #4338CA;
-  --sell-tint: #ECEBFF;
+  --sell-primary: #4338ca;
+  --sell-tint: #ecebff;
 
   /* Call to action */
-  --cta: #C2410C;
-  --cta-hover: #9A3412;
+  --cta: #c2410c;
+  --cta-hover: #9a3412;
 
   /* Text */
-  --text: #1F2937;
-  --text-muted: #4B5563;
+  --text: #1f2937;
+  --text-muted: #4b5563;
 
   /* Surfaces */
-  --surface: #FFFFFF;
-  --bg: #F5F7FA;
+  --surface: #ffffff;
+  --bg: #f5f7fa;
 
   /* Status */
-  --success: #15803D;
-  --warning: #B45309;
-  --danger: #B91C1C;
+  --success: #15803d;
+  --warning: #b45309;
+  --danger: #b91c1c;
 
   /* Typography */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --text-body: 0.875rem;      /* 14px mobile */
-  --text-body-lg: 1rem;       /* 16px */
+  --text-body: 0.875rem; /* 14px mobile */
+  --text-body-lg: 1rem; /* 16px */
 
   /* Radius */
   --radius-card: 12px;

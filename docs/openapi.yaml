@@ -48,7 +48,8 @@ components:
         lastActiveMode: { type: string, enum: [BUY, SELL] }
         sellerOnboardedAt: { type: string, nullable: true }
         campusLocation: { $ref: '#/components/schemas/GeoJSONPoint' }
-        pickupPreference: { type: string, enum: [ON_CAMPUS, HOSTEL_GATE, DEPARTMENT], nullable: true }
+        pickupPreference:
+          { type: string, enum: [ON_CAMPUS, HOSTEL_GATE, DEPARTMENT], nullable: true }
         phone: { type: string, nullable: true }
         isSuspended: { type: boolean }
         createdAt: { type: string }
@@ -60,7 +61,7 @@ components:
         coordinates:
           type: array
           items: { type: number }
-          description: "[lng, lat]"
+          description: '[lng, lat]'
     Category:
       type: object
       properties:
@@ -218,13 +219,17 @@ paths:
       responses:
         '200':
           description: Verified
+          headers:
+            Set-Cookie:
+              description: HttpOnly access and refresh session cookies.
+              schema:
+                type: string
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   user: { $ref: '#/components/schemas/User' }
-                  accessToken: { type: string }
         '400':
           description: OTP error
           content:
@@ -269,6 +274,11 @@ paths:
       responses:
         '200':
           description: OK
+          headers:
+            Set-Cookie:
+              description: HttpOnly access and refresh session cookies.
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -305,7 +315,12 @@ paths:
       tags: [Auth]
       responses:
         '200':
-          description: OK
+          description: Session rotated
+          headers:
+            Set-Cookie:
+              description: Rotated HttpOnly access and refresh session cookies.
+              schema:
+                type: string
           content:
             application/json:
               schema:
