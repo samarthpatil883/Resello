@@ -19,7 +19,17 @@ jobs:
         run: |
           cp server/.env.example server/.env
           docker compose up -d mongo mailpit
-          docker compose exec -T mongo mongosh --quiet --eval "db.adminCommand('ping')"
+          for attempt in {1..30}; do
+            if docker compose exec -T mongo mongosh --quiet --eval "db.adminCommand('ping')" >/dev/null 2>&1; then
+              echo "MongoDB is ready."
+              exit 0
+            fi
+            echo "Waiting for MongoDB ($attempt/30)..."
+            sleep 2
+          done
+          docker compose logs mongo mailpit
+          echo "MongoDB did not become ready within 60 seconds."
+          exit 1
       - run: npm run build
       - run: npm run lint
       - run: npm run lint:openapi
