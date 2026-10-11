@@ -33,7 +33,12 @@ function AuthFrame({
     <main className="auth-page">
       <section className="auth-card">
         <Link to="/welcome" className="auth-back">
-          <span aria-hidden="true">←</span> Resello
+          <span aria-hidden="true">←</span>
+          <img
+            className="auth-brand-image"
+            src="/resello-logo.png"
+            alt="Resello — Online Resale Marketplace"
+          />
         </Link>
         <p className="eyebrow">{eyebrow}</p>
         <h1>{title}</h1>

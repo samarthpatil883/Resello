@@ -27,6 +27,7 @@ import {
   VerifyPage,
 } from './features/auth/AuthPages';
 import Welcome from './features/auth/Welcome';
+import { BuyCheckoutPage, BuyListingPage, BuyWishlistPage } from './features/buy/MarketplacePages';
 
 function ProtectedRoutes() {
   const { user, loading, error, reload } = useAuth();
@@ -98,20 +99,6 @@ function SharedNotificationsRoute() {
   );
 }
 
-function BuyListingPlaceholder() {
-  return (
-    <div className="storefront-page">
-      <div className="search-empty">
-        <h1 tabIndex={-1}>Listing details</h1>
-        <p>Listing information will be available when the marketplace listings API is added.</p>
-        <Link className="button button-secondary" to="/buy">
-          Back to Buy home
-        </Link>
-      </div>
-    </div>
-  );
-}
-
 function SellReviewsPlaceholder() {
   return (
     <div className="storefront-page">
@@ -170,8 +157,10 @@ function RouteTable() {
             <Route index element={<BuyHomePage />} />
             <Route path="search" element={<BuySearchPage />} />
             <Route path="cart" element={<BuyCartPage />} />
+            <Route path="wishlist" element={<BuyWishlistPage />} />
+            <Route path="checkout" element={<BuyCheckoutPage />} />
             <Route path="orders" element={<BuyOrdersPage />} />
-            <Route path="listing/:id" element={<BuyListingPlaceholder />} />
+            <Route path="listing/:id" element={<BuyListingPage />} />
             <Route path="*" element={<BuyHomePage />} />
           </Route>
           <Route path="/sell" element={<ModeShell mode={Mode.SELL} />}>

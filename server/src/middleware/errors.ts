@@ -1,4 +1,5 @@
 import type { ErrorRequestHandler, NextFunction, Request, RequestHandler, Response } from 'express';
+import { MulterError } from 'multer';
 import { ZodError } from 'zod';
 import { CollegeEmailError } from '../validators/collegeEmail';
 import { OtpRequestError } from '../services/otp';
@@ -36,6 +37,28 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, _ne
   if (error instanceof OtpRequestError) {
     res.setHeader('Retry-After', error.retryAfterSec);
     res.status(error.status).json({ error: { code: error.code, message: error.message } });
+    return;
+  }
+
+  if (error instanceof MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      res.status(413).json({
+        error: { code: 'IMAGE_TOO_LARGE', message: 'Each image must be 5 MB or smaller.' },
+      });
+      return;
+    }
+    if (error.code === 'LIMIT_FILE_COUNT') {
+      res.status(400).json({
+        error: { code: 'TOO_MANY_IMAGES', message: 'Upload no more than five images per listing.' },
+      });
+      return;
+    }
+    res.status(400).json({
+      error: {
+        code: 'INVALID_IMAGE_UPLOAD',
+        message: 'Upload up to five images using the images field.',
+      },
+    });
     return;
   }
 

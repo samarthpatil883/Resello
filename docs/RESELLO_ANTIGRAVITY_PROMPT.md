@@ -36,16 +36,17 @@ Stack: React + TypeScript · Node.js/Express · MongoDB · Google Maps · Cloudi
 
 ### 2.1 Which emails are accepted
 
-| Typed by user | Result | Reason |
-|---|---|---|
-| `samarth.patil24@pccoepune.org` | Accept | Allowed domain |
-| `SAMARTH.Patil24@PCCOEPUNE.ORG` | Accept, stored lowercase | Normalisation |
-| `samarth.patil24@gmail.com` | Reject `EMAIL_DOMAIN_NOT_ALLOWED` | Not a college address |
-| `samarth.patil24@mail.pccoepune.org` | Reject `EMAIL_DOMAIN_NOT_ALLOWED` | Subdomains only if explicitly listed |
-| `samarth.patil24@pccoepune.org.evil.com` | Reject `EMAIL_DOMAIN_NOT_ALLOWED` | Exact domain match only |
-| `samarth.patil24+shop@pccoepune.org` | Reject `EMAIL_ALIAS_NOT_ALLOWED` | Stops duplicate accounts via `+` aliases |
+| Typed by user                            | Result                            | Reason                                   |
+| ---------------------------------------- | --------------------------------- | ---------------------------------------- |
+| `samarth.patil24@pccoepune.org`          | Accept                            | Allowed domain                           |
+| `SAMARTH.Patil24@PCCOEPUNE.ORG`          | Accept, stored lowercase          | Normalisation                            |
+| `samarth.patil24@gmail.com`              | Reject `EMAIL_DOMAIN_NOT_ALLOWED` | Not a college address                    |
+| `samarth.patil24@mail.pccoepune.org`     | Reject `EMAIL_DOMAIN_NOT_ALLOWED` | Subdomains only if explicitly listed     |
+| `samarth.patil24@pccoepune.org.evil.com` | Reject `EMAIL_DOMAIN_NOT_ALLOWED` | Exact domain match only                  |
+| `samarth.patil24+shop@pccoepune.org`     | Reject `EMAIL_ALIAS_NOT_ALLOWED`  | Stops duplicate accounts via `+` aliases |
 
 Rules:
+
 - Allowed domains come from the env var `ALLOWED_EMAIL_DOMAINS` (comma-separated, default `pccoepune.org`).
 - Compare the text after the **last** `@`, lowercased, for **exact** equality. Never use `endsWith` or `includes`.
 - Enforce on the **server** for register, login, forgot-password and resend. Client checks are only a convenience.
@@ -56,7 +57,7 @@ Rules:
 ### 2.2 Registration flow
 
 1. **Join Resello** screen: Full name, College email, Password (with strength meter), Confirm password.
-   Helper text under the email field: *"Use your college email, e.g. name.surname24@pccoepune.org"*.
+   Helper text under the email field: _"Use your college email, e.g. name.surname24@pccoepune.org"_.
 2. Client validates format and domain on blur. Server re-validates everything.
 3. `POST /api/auth/register`: normalise → domain check → alias check → uniqueness → create user with
    `emailVerifiedAt = null` → generate OTP → send email → respond `201 { status: "VERIFICATION_REQUIRED", resendAvailableInSec }`.
@@ -128,17 +129,17 @@ The whole marketplace is for verified campus members. Logged-out visitors see on
 
 ### 3.2 What differs per mode
 
-| | **Buy** | **Sell** |
-|---|---|---|
-| Purpose | Find and get items | List items and fulfil orders |
-| Accent / header tint | Teal | Indigo |
-| Home | Discovery feed | Seller dashboard |
-| Search placeholder | "Search books, calculators…" | "Search my listings…" |
-| Primary action | Add to cart | + Sell an item |
-| Mobile bottom nav | Home · Search · Cart · Orders · Me | Dashboard · Listings · **+ Sell** (centre button) · Orders · Me |
-| Orders means | Purchases I made | Orders I received |
-| Route prefix | `/buy/...` | `/sell/...` |
-| Cart | Yes (floating cart bar) | No |
+|                      | **Buy**                            | **Sell**                                                        |
+| -------------------- | ---------------------------------- | --------------------------------------------------------------- |
+| Purpose              | Find and get items                 | List items and fulfil orders                                    |
+| Accent / header tint | Teal                               | Indigo                                                          |
+| Home                 | Discovery feed                     | Seller dashboard                                                |
+| Search placeholder   | "Search books, calculators…"       | "Search my listings…"                                           |
+| Primary action       | Add to cart                        | + Sell an item                                                  |
+| Mobile bottom nav    | Home · Search · Cart · Orders · Me | Dashboard · Listings · **+ Sell** (centre button) · Orders · Me |
+| Orders means         | Purchases I made                   | Orders I received                                               |
+| Route prefix         | `/buy/...`                         | `/sell/...`                                                     |
+| Cart                 | Yes (floating cart bar)            | No                                                              |
 
 ### 3.3 Routes
 
@@ -173,15 +174,15 @@ optional phone number for coordination, and acceptance of seller guidelines
 Mobile-first (320 / 768 / 1024+). Quick-commerce feel in the spirit of Blinkit and Instamart:
 dense card grids, sticky bars, instant feedback, skeleton loaders. Nothing decorative that slows the page.
 
-| Token | Value | Use |
-|---|---|---|
-| `--brand-slate` | `#2C3E50` | Logo, headings |
-| `--buy-primary` / `--buy-tint` | `#0F766E` / `#E6F4F1` | Buy accent / header tint |
-| `--sell-primary` / `--sell-tint` | `#4338CA` / `#ECEBFF` | Sell accent / header tint |
-| `--cta` / `--cta-hover` | `#C2410C` / `#9A3412` | Primary buttons (white text) |
-| `--text` / `--text-muted` | `#1F2937` / `#4B5563` | Body / secondary |
-| `--surface` / `--bg` | `#FFFFFF` / `#F5F7FA` | Cards / page |
-| `--success` / `--warning` / `--danger` | `#15803D` / `#B45309` / `#B91C1C` | Status |
+| Token                                  | Value                             | Use                          |
+| -------------------------------------- | --------------------------------- | ---------------------------- |
+| `--brand-slate`                        | `#2C3E50`                         | Logo, headings               |
+| `--buy-primary` / `--buy-tint`         | `#0F766E` / `#E6F4F1`             | Buy accent / header tint     |
+| `--sell-primary` / `--sell-tint`       | `#4338CA` / `#ECEBFF`             | Sell accent / header tint    |
+| `--cta` / `--cta-hover`                | `#C2410C` / `#9A3412`             | Primary buttons (white text) |
+| `--text` / `--text-muted`              | `#1F2937` / `#4B5563`             | Body / secondary             |
+| `--surface` / `--bg`                   | `#FFFFFF` / `#F5F7FA`             | Cards / page                 |
+| `--success` / `--warning` / `--danger` | `#15803D` / `#B45309` / `#B91C1C` | Status                       |
 
 - Every text/background pair must reach **4.5:1** (3:1 for large text). The values above are chosen for that;
   verify with axe or a contrast checker rather than trusting this table.
@@ -196,23 +197,29 @@ dense card grids, sticky bars, instant feedback, skeleton loaders. Nothing decor
 ## 5. Buy storefront
 
 ### 5.1 Home (`/buy`)
+
 Location chip · search bar with suggestions · category rail (Books, Electronics, Lab & Drafting, Bags, Furniture,
 Stationery, Other) · **Near you** strip (distance chips, e.g. "0.4 km") · **Just listed** grid (2 columns mobile,
 3–4 desktop, infinite scroll) · sell-nudge card · floating cart bar when the cart is not empty.
 Listing card: image, title (2 lines), price, condition badge, seller first name + rating, distance.
 
 ### 5.2 Search and filters (FR-4, FR-5, FR-6)
-Keyword plus filters for category, price range, condition, distance and seller rating; sort by newest,
-price, nearest, top rated. Result count, filter sheet (drawer on mobile, sidebar on desktop).
-Location denied → still return results without proximity ranking and show a note (Search activity diagram, Alt Flow A).
+
+Keyword plus filters for category, price range, condition, distance and seller rating; a New listings toggle for
+items published in the past seven days; sort by newest, price, nearest, top rated. Distance filtering uses the buyer's
+browser location only after permission, plus seller campus locations stored with listings. Result count, filter sheet
+(drawer on mobile, sidebar on desktop). Location denied → still return results without proximity filtering/ranking
+and show a note (Search activity diagram, Alt Flow A).
 No results → friendly empty state with "clear filters". Results must render within 2 seconds (NFR-05).
 
 ### 5.3 Listing detail (`/buy/listing/:id`)
+
 Image gallery with zoom, price, condition, description, seller card (rating, distance, "message seller"),
 reviews summary. Sticky action bar: **Add to cart**, **Save**, **Message**.
 States: `ACTIVE` (normal) · `PENDING` ("Reserved — someone is buying this") · `SOLD` · own listing (see 3.4).
 
 ### 5.4 Cart and checkout
+
 - Cart is grouped by seller. No quantity, no shipping fee, no tax, no promo codes in v1.
 - Checkout in three steps: **(1) Review** items plus an optional handover note (`deliveryNotes`; handover is a
   campus meetup agreed in chat, no shipping address) → **(2) Payment**: Online (Razorpay) or Cash on Delivery
@@ -224,11 +231,14 @@ States: `ACTIVE` (normal) · `PENDING` ("Reserved — someone is buying this") �
 - Confirmation screen: order numbers (copyable), what happens next, buttons to **View orders** and **Keep browsing**.
 
 ### 5.5 Orders (buyer)
+
 Tabs Active / Completed / Cancelled. Detail timeline: **Placed → Confirmed by seller → Completed**
-(or Cancelled). When the item is handed over the buyer taps **I received it** → `COMPLETED`.
-Buttons: Message seller, Rate seller (only after `COMPLETED`), Cancel (only while `PLACED`).
+(or Cancelled). After campus handover, the buyer and seller each approve completion from their own order view.
+The order becomes `COMPLETED` and its listing becomes `SOLD` only after both approvals are recorded.
+Buttons: Message seller, approve completion, Rate seller (only after `COMPLETED`), Cancel (only while `PLACED`).
 
 ### 5.6 Wishlist, reviews
+
 Wishlist: saved listings, move to cart, remove. Review (Rate and Review activity diagram): only for a
 `COMPLETED` order, one review per order, 1–5 stars plus optional comment; seller's average rating updates.
 
@@ -237,15 +247,18 @@ Wishlist: saved listings, move to cart, remove. Review (Rate and Review activity
 ## 6. Sell storefront
 
 ### 6.1 Dashboard (`/sell`)
+
 Tiles: active listings · orders needing confirmation · completed sales · average rating.
 **Needs your action** list (oldest pending order first, with age) · recent messages ·
 sales summary (sum of completed order totals, split Online vs COD; **record only**, see §14).
 
 ### 6.2 My listings (`/sell/listings`)
+
 Tabs Active / Reserved / Sold / Removed. Actions: edit, delete, mark sold. A listing removed by an admin
 shows the reason. Reserved listings cannot be edited or deleted until the order resolves.
 
 ### 6.3 Quick List (`/sell/listings/new`)
+
 Goal: a returning seller posts in under a minute.
 Photos first (camera or gallery, up to 5, first is the cover) with per-image upload progress →
 title → category → condition → price → description → location (default from onboarding) → **Post**.
@@ -255,11 +268,13 @@ Field validation errors return the seller to the form. On success the listing is
 Optional nicety: show the median price of similar active listings as a hint.
 
 ### 6.4 Incoming orders (`/sell/orders`)
+
 Tabs Needs action / Confirmed / Completed / Cancelled. Each card: item, buyer first name, payment method, total, age.
 Actions: **Confirm order** (FR-20) · **Cancel** (with reason; listing returns to `ACTIVE`) · **Message buyer** ·
 for COD after handover **Mark cash received** (payment → `COMPLETED`).
 
 ### 6.5 Reviews received (`/sell/reviews`)
+
 Average rating, star distribution, list of reviews. Read-only.
 
 ---
@@ -290,14 +305,15 @@ Enums: `ListingStatus` ACTIVE / SOLD / REMOVED / PENDING · `ConditionType` NEW 
 `OrderStatus` PLACED / CONFIRMED / COMPLETED / CANCELLED · `PaymentMethod` ONLINE / COD ·
 `PaymentStatus` PENDING / COMPLETED / FAILED / PENDING_COLLECTION.
 
-| Event | Order | Listing | Payment |
-|---|---|---|---|
-| Checkout placed | `PLACED` | `ACTIVE → PENDING` (atomic) | ONLINE `PENDING` · COD `PENDING_COLLECTION` |
-| Online payment verified | unchanged | unchanged | `COMPLETED` |
-| Online payment failed | unchanged | unchanged | `FAILED` (buyer may retry or switch to COD) |
-| Seller confirms | `CONFIRMED` | `PENDING` | unchanged |
-| Buyer taps "I received it" | `COMPLETED` | `SOLD` | ONLINE `COMPLETED` · COD `COMPLETED` once cash is marked received |
-| Cancelled before completion | `CANCELLED` | `PENDING → ACTIVE` | unchanged or refunded per §14 |
+| Event                       | Order                                      | Listing                          | Payment                                     |
+| --------------------------- | ------------------------------------------ | -------------------------------- | ------------------------------------------- |
+| Checkout placed             | `PLACED`                                   | `ACTIVE → PENDING` (atomic)      | ONLINE `PENDING` · COD `PENDING_COLLECTION` |
+| Online payment verified     | unchanged                                  | unchanged                        | `COMPLETED`                                 |
+| Online payment failed       | unchanged                                  | unchanged                        | `FAILED` (buyer may retry or switch to COD) |
+| Seller confirms             | `CONFIRMED`                                | `PENDING`                        | unchanged                                   |
+| Buyer approves completion   | unchanged until seller approval            | `PENDING`                        | unchanged                                   |
+| Seller approves completion  | `COMPLETED` only if buyer already approved | `SOLD` only when order completes | unchanged                                   |
+| Cancelled before completion | `CANCELLED`                                | `PENDING → ACTIVE`               | unchanged or refunded per §14               |
 
 - One checkout creates **one `Order` per listing** (as `Cart.checkout()` returns `List<Order>`), each with one `Payment`.
   For an online payment covering several sellers, create one Razorpay order for the total and stamp the same
@@ -320,7 +336,7 @@ Enums: `ListingStatus` ACTIVE / SOLD / REMOVED / PENDING · `ConditionType` NEW 
 **Buy**
 `GET /api/listings` (search, filters, sort, pagination, `excludeMine=true`) · `GET /api/listings/nearby` · `GET /api/listings/:id`
 `GET/POST/DELETE /api/cart/items` · `POST /api/checkout` · `POST /api/payments/verify` · `POST /api/payments/webhook`
-`GET /api/orders` (buyer) · `GET /api/orders/:id` · `POST /api/orders/:id/cancel` · `POST /api/orders/:id/confirm-receipt`
+`GET /api/orders` (buyer or seller) · `GET /api/orders/:id` · `POST /api/orders/:id/cancel` · `POST /api/orders/:id/completion-approval` · `POST /api/orders/:id/rating` (buyer, completed order only)
 `GET/POST/DELETE /api/wishlist` · `POST /api/reviews`
 
 **Sell**
@@ -383,7 +399,7 @@ ownership server-side (`seller === me`); every buyer route checks `buyer === me`
 
 - **Seller payouts.** How online payments reach sellers (manual settlement or Razorpay Route) is undecided. v1 only records payments.
 - **Refunds** for cancelled online orders: record the intent, no automation in v1.
-- **Auto-completion policy** if a buyer never taps "I received it" is undecided; disputes go to admin.
+- **Auto-completion policy** if either order participant never approves handover completion is undecided; disputes go to admin.
 - **Real PCCOE email formats and domains.** Confirm whether students and staff share `pccoepune.org`, and whether the `name.surname24` pattern is universal.
 - **Google Workspace** status of PCCOE mailboxes (see 2.5).
 - **Graduating students:** college mailboxes may be deactivated after graduation; periodic re-verification is not in v1.

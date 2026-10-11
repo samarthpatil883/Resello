@@ -148,23 +148,6 @@ input:focus-visible {
   padding: 58px clamp(26px, 6vw, 82px);
 }
 
-.brand-mark,
-.header-logo {
-  display: inline-grid;
-  width: 42px;
-  height: 42px;
-  place-items: center;
-  border-radius: 14px;
-  background: var(--buy-primary);
-  color: #fff;
-  font-size: 1.35rem;
-  font-weight: 900;
-}
-
-.welcome-card .brand-mark {
-  margin-bottom: 48px;
-}
-
 .welcome-card .eyebrow {
   color: var(--buy-primary);
 }
@@ -716,12 +699,11 @@ input:focus-visible {
   letter-spacing: -0.04em;
 }
 
-.header-logo {
-  width: 35px;
-  height: 35px;
-  border-radius: 11px;
-  background: var(--mode-primary);
-  font-size: 1.1rem;
+.header-brand-image {
+  display: block;
+  width: 82px;
+  height: auto;
+  object-fit: contain;
 }
 
 .mode-switcher {
@@ -815,6 +797,28 @@ input:focus-visible {
   place-items: center;
   border-radius: 50%;
   color: var(--brand-slate);
+}
+
+.wishlist-header-button {
+  position: relative;
+}
+
+.wishlist-count {
+  position: absolute;
+  top: 2px;
+  right: 1px;
+  display: grid;
+  min-width: 17px;
+  height: 17px;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  padding: 0 3px;
+  background: #e11d48;
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .icon-button:hover {
@@ -1020,6 +1024,13 @@ input:focus-visible {
   color: var(--buy-primary);
 }
 
+.auth-brand-image {
+  display: block;
+  width: 104px;
+  height: auto;
+  object-fit: contain;
+}
+
 .category-arrow {
   margin-left: auto;
   color: #73808f;
@@ -1138,7 +1149,7 @@ input:focus-visible {
   gap: 9px;
 }
 
-.filter-chips span {
+.filter-chip {
   display: inline-flex;
   min-height: 37px;
   align-items: center;
@@ -1150,10 +1161,115 @@ input:focus-visible {
   color: #3c4857;
   font-size: 0.8rem;
   font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
-.filter-chips span:first-child {
+.filter-chip:hover,
+.filter-chip-active {
   color: var(--buy-primary);
+  border-color: #b9d9d3;
+  background: #f0faf8;
+}
+
+.filter-chip:focus-visible,
+.filter-location-button:focus-visible,
+.filter-clear-button:focus-visible {
+  outline: 3px solid #0f766e;
+  outline-offset: 2px;
+}
+
+.filter-dropdown {
+  position: relative;
+}
+
+.filter-dropdown > summary {
+  list-style: none;
+}
+
+.filter-dropdown > summary::-webkit-details-marker {
+  display: none;
+}
+
+.filter-panel {
+  position: absolute;
+  z-index: 8;
+  top: calc(100% + 8px);
+  left: 0;
+  display: grid;
+  width: min(280px, calc(100vw - 36px));
+  gap: 12px;
+  border: 1px solid #e1e7eb;
+  border-radius: 16px;
+  padding: 16px;
+  background: #fff;
+  box-shadow: 0 12px 32px #172b3a1c;
+}
+
+.filter-panel label {
+  display: grid;
+  gap: 6px;
+  color: #3c4857;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.filter-panel input,
+.filter-panel select {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid #d4dce3;
+  border-radius: 9px;
+  padding: 0 10px;
+  background: #fff;
+  color: #243244;
+  font-size: 0.88rem;
+}
+
+.price-filter-panel > strong {
+  color: var(--brand-slate);
+  font-size: 0.95rem;
+}
+
+.filter-location-button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid #b9d9d3;
+  border-radius: 9px;
+  padding: 0 11px;
+  background: #f0faf8;
+  color: #0f766e;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.filter-help,
+.filter-error {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.filter-help {
+  color: #64748b;
+}
+
+.filter-error {
+  color: #b91c1c;
+}
+
+.filter-clear-button {
+  min-height: 34px;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .search-empty {
@@ -1511,9 +1627,8 @@ input:focus-visible {
     font-size: 1.05rem;
   }
 
-  .header-logo {
-    width: 32px;
-    height: 32px;
+  .header-brand-image {
+    width: 72px;
   }
 
   .mode-switcher {
@@ -1629,10 +1744,6 @@ input:focus-visible {
     min-height: 100svh;
     justify-content: center;
     padding: 28px 25px;
-  }
-
-  .welcome-card .brand-mark {
-    margin-bottom: 34px;
   }
 
   .welcome-card h1 {

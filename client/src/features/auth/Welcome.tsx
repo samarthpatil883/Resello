@@ -152,8 +152,12 @@ export default function Welcome() {
 
       <header className="rs-nav">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link to="/welcome" className="flex items-center gap-2 text-lg font-bold">
-            <ShoppingBag aria-hidden="true" className="h-5 w-5" /> Resello
+          <Link to="/welcome" className="flex items-center" aria-label="Resello home">
+            <img
+              src="/resello-logo.png"
+              alt="Resello — Online Resale Marketplace"
+              className="h-auto w-28 sm:w-32"
+            />
           </Link>
           <nav
             aria-label="Primary"

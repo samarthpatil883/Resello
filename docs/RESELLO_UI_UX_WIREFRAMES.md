@@ -36,25 +36,25 @@ SELL MODE (indigo header tint)
 
 ### 1.2 Transition timeline (total under 300 ms)
 
-| t (ms) | What happens |
-|---|---|
-| 0 | Tap on the other segment. Highlight begins sliding (200 ms, ease-out). |
-| 0–150 | Header tint cross-fades teal ↔ indigo. Current page fades to 0. |
+| t (ms)  | What happens                                                                                          |
+| ------- | ----------------------------------------------------------------------------------------------------- |
+| 0       | Tap on the other segment. Highlight begins sliding (200 ms, ease-out).                                |
+| 0–150   | Header tint cross-fades teal ↔ indigo. Current page fades to 0.                                       |
 | 100–300 | Bottom nav swaps items with a short fade. New mode's last route fades in (skeleton if data is stale). |
-| 300 | Focus moves to the page `h1`. `aria-live` announces "Switched to Sell mode". |
-| async | `PATCH /api/me/mode` is sent; failure is silent and retried once. |
+| 300     | Focus moves to the page `h1`. `aria-live` announces "Switched to Sell mode".                          |
+| async   | `PATCH /api/me/mode` is sent; failure is silent and retried once.                                     |
 
 With `prefers-reduced-motion`, skip the slide and fades (instant swap). Never block the UI on the network call.
 
 ### 1.3 Navigation per mode
 
-| Slot | Buy | Sell |
-|---|---|---|
-| 1 | Home | Dashboard |
-| 2 | Search | Listings |
-| 3 | Cart (badge) | **+** (raised centre button → Quick List) |
-| 4 | Orders (purchases) | Orders (received, badge = needs action) |
-| 5 | Me | Me |
+| Slot | Buy                | Sell                                      |
+| ---- | ------------------ | ----------------------------------------- |
+| 1    | Home               | Dashboard                                 |
+| 2    | Search             | Listings                                  |
+| 3    | Cart (badge)       | **+** (raised centre button → Quick List) |
+| 4    | Orders (purchases) | Orders (received, badge = needs action)   |
+| 5    | Me                 | Me                                        |
 
 ---
 
@@ -161,6 +161,18 @@ Auto-advance between boxes, support paste of all six digits, `inputmode="numeric
 
 Own listings never appear here. Skeleton cards while loading. Empty state (no listings nearby): "Nothing listed near you yet — be the first to sell" + button to Sell.
 
+Search uses a compact, wrapping filter strip:
+
+```
+[✓ New listings] [Price v] [Condition v] [Distance v] [Sort: newest v]
+```
+
+New listings means items published in the last seven days. Price accepts a minimum and maximum;
+condition offers New, Like new, Good, Fair and Poor. Distance requests browser location only after
+the buyer selects a radius or nearest sorting. If permission is denied, clear the proximity filter,
+show a note and keep showing non-distance results. Sort options: newest, price low-to-high,
+price high-to-low and nearest.
+
 ### 3.2 Listing detail
 
 ```
@@ -182,11 +194,11 @@ Own listings never appear here. Skeleton cards while loading. Empty state (no li
 +------------------------------------+
 ```
 
-| Variant | Banner | Action bar |
-|---|---|---|
-| Own listing | "This is your listing" | **[Manage in Sell]** replaces Add to cart (switches mode, opens edit) |
-| `PENDING` | "Reserved — someone is buying this" | Add to cart disabled; [Save] still works |
-| `SOLD` | "Sold" | Disabled; show "Similar items" below |
+| Variant     | Banner                              | Action bar                                                            |
+| ----------- | ----------------------------------- | --------------------------------------------------------------------- |
+| Own listing | "This is your listing"              | **[Manage in Sell]** replaces Add to cart (switches mode, opens edit) |
+| `PENDING`   | "Reserved — someone is buying this" | Add to cart disabled; [Save] still works                              |
+| `SOLD`      | "Sold"                              | Disabled; show "Similar items" below                                  |
 
 ### 3.3 Cart (no quantity, no shipping, no promo)
 
@@ -256,12 +268,15 @@ buttons **View orders** and **Keep browsing**.
 | ( ) Completed     waiting          |
 |                                    |
 | Handover: meet at Hostel A gate    |
-| [        I received it         ]   |
+| Buyer:  [ Approve completion ]     |
+| Seller: [ Approve completion ]     |
+| Order completes after both approve |
 | [ Cancel order ]  only while Placed|
 +------------------------------------+
 ```
 
-Statuses map exactly to `PLACED → CONFIRMED → COMPLETED` (or `CANCELLED`). After Completed show **Rate seller**.
+Statuses map exactly to `PLACED → CONFIRMED → COMPLETED` (or `CANCELLED`). Both buyer and seller must approve handover;
+after Completed, show **Rate seller** to the buyer.
 
 ---
 
@@ -405,18 +420,18 @@ top bar in Buy only; **+ Sell an item** appears in the top bar in Sell only. At 
 
 ## 6. Component inventory
 
-| Component | Notes |
-|---|---|
-| `ModeSwitcher` | Props: `mode`, `badges {buy, sell}`, `onChange`. `role="tablist"`. Arrow-key navigation. Renders nothing on auth and admin routes. |
-| `ModeShell` | Wraps each mode: applies theme tokens, header tint, bottom nav; keeps each mode's routes mounted so scroll and form state survive a switch. |
-| `ListingCard` | Image, title, price, condition badge, seller first name, rating, distance. Variants: grid, strip, compact (cart). |
-| `CartBar` | Floating bar above the bottom nav; hidden when the cart is empty. |
-| `OtpInput` | Six boxes, paste support, `autocomplete="one-time-code"`. |
-| `StatusTimeline` | Vertical steps for `PLACED → CONFIRMED → COMPLETED` and a `CANCELLED` variant. |
-| `StatTile` / `NeedsActionCard` | Seller dashboard building blocks. |
-| `ImageUploader` | Multi-image, per-file progress, retry and remove, reorder to set the cover. |
-| `FilterSheet` | Drawer on mobile, sidebar on desktop. |
-| `Toast`, `Skeleton`, `EmptyState`, `Badge`, `Rating`, `Button` (primary / secondary / text / loading / disabled) | Shared. |
+| Component                                                                                                        | Notes                                                                                                                                       |
+| ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ModeSwitcher`                                                                                                   | Props: `mode`, `badges {buy, sell}`, `onChange`. `role="tablist"`. Arrow-key navigation. Renders nothing on auth and admin routes.          |
+| `ModeShell`                                                                                                      | Wraps each mode: applies theme tokens, header tint, bottom nav; keeps each mode's routes mounted so scroll and form state survive a switch. |
+| `ListingCard`                                                                                                    | Image, title, price, condition badge, seller first name, rating, distance. Variants: grid, strip, compact (cart).                           |
+| `CartBar`                                                                                                        | Floating bar above the bottom nav; hidden when the cart is empty.                                                                           |
+| `OtpInput`                                                                                                       | Six boxes, paste support, `autocomplete="one-time-code"`.                                                                                   |
+| `StatusTimeline`                                                                                                 | Vertical steps for `PLACED → CONFIRMED → COMPLETED` and a `CANCELLED` variant.                                                              |
+| `StatTile` / `NeedsActionCard`                                                                                   | Seller dashboard building blocks.                                                                                                           |
+| `ImageUploader`                                                                                                  | Multi-image, per-file progress, retry and remove, reorder to set the cover.                                                                 |
+| `FilterSheet`                                                                                                    | Drawer on mobile, sidebar on desktop.                                                                                                       |
+| `Toast`, `Skeleton`, `EmptyState`, `Badge`, `Rating`, `Button` (primary / secondary / text / loading / disabled) | Shared.                                                                                                                                     |
 
 Every data screen must implement four states: **loading** (skeleton), **empty**, **error** (with retry), and **populated**.
 
@@ -435,16 +450,16 @@ Every data screen must implement four states: **loading** (skeleton), **empty**,
 
 ## 8. Copy deck (key messages)
 
-| Situation | Text |
-|---|---|
-| Wrong domain | "Only college emails work here. Use yourname@pccoepune.org." |
-| Alias | "Please use your plain college address without a + tag." |
-| Already registered | "This email is already registered. Log in instead." |
-| OTP wrong | "That code is not right. {n} tries left." |
-| OTP expired | "This code expired. We can send a new one." |
-| Unverified login | "Please verify your college email to continue." |
-| Own listing | "This is your listing." |
-| Reserved | "Reserved — someone is buying this." |
+| Situation               | Text                                                              |
+| ----------------------- | ----------------------------------------------------------------- |
+| Wrong domain            | "Only college emails work here. Use yourname@pccoepune.org."      |
+| Alias                   | "Please use your plain college address without a + tag."          |
+| Already registered      | "This email is already registered. Log in instead."               |
+| OTP wrong               | "That code is not right. {n} tries left."                         |
+| OTP expired             | "This code expired. We can send a new one."                       |
+| Unverified login        | "Please verify your college email to continue."                   |
+| Own listing             | "This is your listing."                                           |
+| Reserved                | "Reserved — someone is buying this."                              |
 | Unavailable at checkout | "{title} is no longer available and was removed from your order." |
-| Payment failed | "Payment failed. Try again or pay cash on delivery." |
-| Suspended | "Your account has been suspended. Contact the Resello admin." |
+| Payment failed          | "Payment failed. Try again or pay cash on delivery."              |
+| Suspended               | "Your account has been suspended. Contact the Resello admin."     |

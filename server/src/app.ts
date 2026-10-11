@@ -5,6 +5,8 @@ import cookieParser from 'cookie-parser';
 import { env } from './config/env';
 import { authRouter } from './routes/auth';
 import { healthRouter } from './routes/health';
+import { itemsRouter } from './routes/items';
+import { ordersRouter } from './routes/orders';
 import { errorHandler, HttpError } from './middleware/errors';
 
 const app = express();
@@ -25,6 +27,8 @@ app.use(cookieParser());
 // Routes
 app.use('/api', healthRouter);
 app.use('/api', authRouter);
+app.use('/api', itemsRouter);
+app.use('/api', ordersRouter);
 app.use((_req, _res, next) =>
   next(new HttpError(404, 'NOT_FOUND', 'The requested resource was not found.')),
 );

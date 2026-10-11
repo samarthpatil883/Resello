@@ -11,9 +11,18 @@ const envSchema = z.object({
   CLIENT_ORIGIN: z.string().default('http://localhost:5173'),
   MONGODB_URI: z.string().default('mongodb://localhost:27017/resello'),
   ALLOWED_EMAIL_DOMAINS: z.string().default('pccoepune.org'),
-  JWT_ACCESS_SECRET: z.string().min(1).default(isTest ? 'test-access-secret' : ''),
-  JWT_REFRESH_SECRET: z.string().min(1).default(isTest ? 'test-refresh-secret' : ''),
-  OTP_SECRET: z.string().min(1).default(isTest ? 'test-otp-secret' : ''),
+  JWT_ACCESS_SECRET: z
+    .string()
+    .min(1)
+    .default(isTest ? 'test-access-secret' : ''),
+  JWT_REFRESH_SECRET: z
+    .string()
+    .min(1)
+    .default(isTest ? 'test-refresh-secret' : ''),
+  OTP_SECRET: z
+    .string()
+    .min(1)
+    .default(isTest ? 'test-otp-secret' : ''),
   SMTP_HOST: z.string().default('localhost'),
   SMTP_PORT: z.coerce.number().default(1025),
   SMTP_USER: z.string().optional().default(''),

@@ -10,6 +10,7 @@ import {
   Bell,
   BookOpen,
   ClipboardList,
+  Heart,
   LayoutDashboard,
   List,
   LogOut,
@@ -23,6 +24,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { Mode } from '@resello/shared';
 import { api } from '../lib/api';
 import { useAuth } from '../features/auth/AuthContext';
+import { useMarketplaceStore } from '../features/buy/marketplaceStore';
 
 const modes = [Mode.BUY, Mode.SELL] as const;
 
@@ -161,6 +163,9 @@ function PrimaryNavigation({ mode, onSwitch }: { mode: Mode; onSwitch: (mode: Mo
 
 export function ModeShell({ mode, children }: { mode: Mode; children?: ReactNode }) {
   const { user, logout } = useAuth();
+  const wishlistCount = useMarketplaceStore(
+    (state) => state.wishlistByUser[user?._id ?? '']?.length ?? 0,
+  );
   const navigate = useNavigate();
   const location = useLocation();
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -233,14 +238,26 @@ export function ModeShell({ mode, children }: { mode: Mode; children?: ReactNode
             to={mode === Mode.BUY ? '/buy' : '/sell'}
             aria-label="Resello home"
           >
-            <span className="header-logo">R</span>
-            <span>resello</span>
+            <img className="header-brand-image" src="/resello-logo.png" alt="Resello" />
           </Link>
           <ModeSwitcher mode={mode} onChange={(nextMode) => void switchMode(nextMode)} />
           <SearchBox key={mode} mode={mode} />
           <div className="header-actions">
             <Link to="/notifications" className="icon-button" aria-label="Notifications">
               <Bell size={19} />
+            </Link>
+            <Link
+              to="/buy/wishlist"
+              className="icon-button wishlist-header-button"
+              aria-label={`Wishlist${wishlistCount ? `, ${wishlistCount} saved ${wishlistCount === 1 ? 'item' : 'items'}` : ''}`}
+              title="Wishlist"
+            >
+              <Heart size={19} aria-hidden="true" />
+              {wishlistCount > 0 && (
+                <span className="wishlist-count" aria-hidden="true">
+                  {wishlistCount > 99 ? '99+' : wishlistCount}
+                </span>
+              )}
             </Link>
             <Link to="/profile" className="header-user" aria-label="My profile">
               <span className="avatar">{user?.name.slice(0, 1).toUpperCase() ?? 'U'}</span>
