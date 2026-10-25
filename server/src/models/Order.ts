@@ -4,6 +4,7 @@ export interface OrderFields {
   buyerId: Types.ObjectId;
   sellerId: Types.ObjectId;
   itemId: Types.ObjectId;
+  itemTitle?: string;
   price: number;
   status: 'PLACED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
   buyerCompletedAt: Date | null;
@@ -22,6 +23,7 @@ const orderSchema = new Schema<OrderFields>(
     buyerId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     sellerId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     itemId: { type: Schema.Types.ObjectId, ref: 'Item', required: true, index: true },
+    itemTitle: { type: String, trim: true, maxlength: 120 },
     price: { type: Number, min: 0.01, required: true },
     status: {
       type: String,

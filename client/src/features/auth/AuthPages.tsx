@@ -13,9 +13,7 @@ import { api, getApiErrorCode, getApiErrorMessage } from '../../lib/api';
 import { useAuth } from './AuthContext';
 
 function destinationFor(user: User) {
-  const savedMode = localStorage.getItem('resello:lastMode');
-  const mode = savedMode === 'SELL' || savedMode === 'BUY' ? savedMode : user.lastActiveMode;
-  return sessionStorage.getItem(`resello:lastRoute:${mode}`) ?? `/${mode.toLowerCase()}`;
+  return user.role === 'ADMIN' ? '/admin' : '/buy';
 }
 
 function AuthFrame({

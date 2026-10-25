@@ -135,14 +135,11 @@ const TRUST = [
   },
 ];
 
-function destinationForMode(mode: string) {
-  if (mode !== 'BUY' && mode !== 'SELL') return '/buy';
-  return sessionStorage.getItem(`resello:lastRoute:${mode}`) ?? `/${mode.toLowerCase()}`;
-}
-
 export default function Welcome() {
   const { user, loading } = useAuth();
-  if (user && !loading) return <Navigate to={destinationForMode(user.lastActiveMode)} replace />;
+  if (user && !loading) {
+    return <Navigate to={user.role === 'ADMIN' ? '/admin' : '/buy'} replace />;
+  }
 
   return (
     <div className="rs">
@@ -168,6 +165,9 @@ export default function Welcome() {
             <a href="#trust">Safety</a>
           </nav>
           <div className="flex items-center gap-2">
+            <Button asChild variant="ghost">
+              <Link to="/admin/login">Admin</Link>
+            </Button>
             <Button asChild variant="ghost">
               <Link to="/login">Log in</Link>
             </Button>

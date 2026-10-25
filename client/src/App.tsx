@@ -7,6 +7,7 @@ import { useAuth } from './features/auth/AuthContext';
 import { SellerOnboardingPage } from './features/sell/SellerOnboardingPage';
 import {
   BuyCartPage,
+  BuyCategoriesPage,
   BuyHomePage,
   BuyOrdersPage,
   BuySearchPage,
@@ -28,6 +29,7 @@ import {
 } from './features/auth/AuthPages';
 import Welcome from './features/auth/Welcome';
 import { BuyCheckoutPage, BuyListingPage, BuyWishlistPage } from './features/buy/MarketplacePages';
+import { AdminDashboardPage, AdminLoginPage } from './features/admin/AdminPages';
 
 function ProtectedRoutes() {
   const { user, loading, error, reload } = useAuth();
@@ -35,7 +37,14 @@ function ProtectedRoutes() {
 
   if (loading) return <LoadingPage />;
   if (error) return <ConnectionErrorPage message={error} retry={() => void reload()} />;
-  if (!user) return <Navigate to="/welcome" replace state={{ from: location.pathname }} />;
+  if (!user)
+    return (
+      <Navigate
+        to={location.pathname.startsWith('/admin') ? '/admin/login' : '/welcome'}
+        replace
+        state={{ from: location.pathname }}
+      />
+    );
   if (
     location.pathname.startsWith('/sell') &&
     location.pathname !== '/sell/onboarding' &&
@@ -49,17 +58,42 @@ function ProtectedRoutes() {
   return <Outlet />;
 }
 
+function AdminLoginRoute() {
+  const { user, loading, error, reload } = useAuth();
+  if (loading) return <LoadingPage />;
+  if (error) return <ConnectionErrorPage message={error} retry={() => void reload()} />;
+  if (user?.role === 'ADMIN') return <Navigate to="/admin" replace />;
+  return <AdminLoginPage />;
+}
+
+function AdminRoute() {
+  const { user, loading, error, reload } = useAuth();
+  if (loading) return <LoadingPage />;
+  if (error) return <ConnectionErrorPage message={error} retry={() => void reload()} />;
+  if (!user) return <Navigate to="/admin/login" replace />;
+  if (user.role !== 'ADMIN') {
+    return (
+      <main className="state-page">
+        <span className="state-icon" aria-hidden="true">
+          !
+        </span>
+        <h1>Administrator access required.</h1>
+        <p>This account does not have the administrator role.</p>
+        <Link className="button button-secondary" to="/buy">
+          Back to marketplace
+        </Link>
+      </main>
+    );
+  }
+  return <AdminDashboardPage />;
+}
+
 function PublicRoutes() {
   const { user, loading, error, reload } = useAuth();
   if (loading) return <LoadingPage />;
   if (error) return <ConnectionErrorPage message={error} retry={() => void reload()} />;
   if (user) {
-    const savedMode = localStorage.getItem('resello:lastMode');
-    const destination =
-      savedMode === 'BUY' || savedMode === 'SELL'
-        ? `/${savedMode.toLowerCase()}`
-        : `/${user.lastActiveMode.toLowerCase()}`;
-    return <Navigate to={destination} replace />;
+    return <Navigate to={user.role === 'ADMIN' ? '/admin' : '/buy'} replace />;
   }
   return <Outlet />;
 }
@@ -110,40 +144,11 @@ function SellReviewsPlaceholder() {
   );
 }
 
-function AdminNotice() {
-  const { user } = useAuth();
-  if (user?.role !== 'ADMIN') {
-    return (
-      <main className="state-page">
-        <span className="state-icon" aria-hidden="true">
-          !
-        </span>
-        <h1>Admin access required.</h1>
-        <p>This area is only available to a Resello administrator.</p>
-        <Link className="button button-secondary" to="/buy">
-          Back to Buy
-        </Link>
-      </main>
-    );
-  }
-  return (
-    <main className="state-page">
-      <span className="state-icon" aria-hidden="true">
-        !
-      </span>
-      <h1>Admin tools aren’t available yet.</h1>
-      <p>Administration screens are being built in a later project gate.</p>
-      <Link className="button button-secondary" to="/buy">
-        Back to Buy
-      </Link>
-    </main>
-  );
-}
-
 function RouteTable() {
   return (
     <>
       <Routes>
+        <Route path="/admin/login" element={<AdminLoginRoute />} />
         <Route element={<PublicRoutes />}>
           <Route path="/welcome" element={<Welcome />} />
           <Route path="/join" element={<JoinPage />} />
@@ -155,6 +160,7 @@ function RouteTable() {
         <Route element={<ProtectedRoutes />}>
           <Route path="/buy" element={<ModeShell mode={Mode.BUY} />}>
             <Route index element={<BuyHomePage />} />
+            <Route path="categories" element={<BuyCategoriesPage />} />
             <Route path="search" element={<BuySearchPage />} />
             <Route path="cart" element={<BuyCartPage />} />
             <Route path="wishlist" element={<BuyWishlistPage />} />
@@ -175,7 +181,7 @@ function RouteTable() {
           </Route>
           <Route path="/profile" element={<SharedProfileRoute />} />
           <Route path="/notifications" element={<SharedNotificationsRoute />} />
-          <Route path="/admin/*" element={<AdminNotice />} />
+          <Route path="/admin/*" element={<AdminRoute />} />
         </Route>
         <Route path="/" element={<Navigate to="/welcome" replace />} />
         <Route path="*" element={<Navigate to="/welcome" replace />} />

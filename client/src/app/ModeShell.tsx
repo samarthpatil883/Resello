@@ -16,15 +16,17 @@ import {
   LogOut,
   Plus,
   Search,
+  Shield,
   ShoppingBag,
   Store,
   UserRound,
 } from 'lucide-react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Mode } from '@resello/shared';
-import { api } from '../lib/api';
+import { api, getApiErrorMessage } from '../lib/api';
 import { useAuth } from '../features/auth/AuthContext';
 import { useMarketplaceStore } from '../features/buy/marketplaceStore';
+import { refreshWishlist } from '../features/buy/wishlistApi';
 
 const modes = [Mode.BUY, Mode.SELL] as const;
 
@@ -169,6 +171,29 @@ export function ModeShell({ mode, children }: { mode: Mode; children?: ReactNode
   const navigate = useNavigate();
   const location = useLocation();
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [wishlistSyncError, setWishlistSyncError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user?._id) return;
+    let active = true;
+    const sync = () => {
+      setWishlistSyncError(null);
+      refreshWishlist(user._id).catch((error: unknown) => {
+        if (active) setWishlistSyncError(getApiErrorMessage(error));
+      });
+    };
+    const syncWhenVisible = () => {
+      if (document.visibilityState === 'visible') sync();
+    };
+    sync();
+    window.addEventListener('focus', sync);
+    document.addEventListener('visibilitychange', syncWhenVisible);
+    return () => {
+      active = false;
+      window.removeEventListener('focus', sync);
+      document.removeEventListener('visibilitychange', syncWhenVisible);
+    };
+  }, [user?._id]);
 
   useEffect(() => {
     if (location.pathname.startsWith(`/${mode.toLowerCase()}`)) {
@@ -263,6 +288,16 @@ export function ModeShell({ mode, children }: { mode: Mode; children?: ReactNode
               <span className="avatar">{user?.name.slice(0, 1).toUpperCase() ?? 'U'}</span>
               <span className="header-user-name">{user?.name.split(' ')[0] ?? 'Me'}</span>
             </Link>
+            {user?.role === 'ADMIN' && (
+              <Link
+                to="/admin"
+                className="icon-button"
+                aria-label="Admin console"
+                title="Admin console"
+              >
+                <Shield size={18} aria-hidden="true" />
+              </Link>
+            )}
             <button
               type="button"
               className="icon-button"
@@ -280,6 +315,11 @@ export function ModeShell({ mode, children }: { mode: Mode; children?: ReactNode
         </div>
       </header>
       <main className="app-content">
+        {wishlistSyncError && (
+          <p className="inline-notice" role="alert">
+            Wishlist could not be synchronized: {wishlistSyncError}
+          </p>
+        )}
         {children ?? <Outlet />}
         {searchError && (
           <p className="inline-notice" role="alert">

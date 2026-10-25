@@ -82,6 +82,8 @@ Rules:
 ### 2.4 Login, sessions, reset
 
 - Login uses college email + password. The same domain check runs first, so non-college addresses never reach the password check.
+- After a successful login, students always land on `/buy`, regardless of their last-used storefront or saved route.
+  Seeded administrators land on `/admin`; they can enter the marketplace explicitly through permitted admin navigation.
 - Suspended accounts (`isSuspended`) are blocked in **both** storefronts with a clear notice. Their sessions are revoked.
 - Access token 15 min + refresh token 30 days with rotation, both in **HttpOnly, Secure cookies**.
   Tokens are never stored in `localStorage`.
@@ -148,7 +150,9 @@ The whole marketplace is for verified campus members. Logged-out visitors see on
 - **Shared (either mode):** `/messages`, `/messages/:id`, `/notifications`, `/profile`, `/settings`
 - **Auth:** `/welcome`, `/join`, `/verify`, `/login`, `/forgot`, `/reset`
 - **Admin:** `/admin/*`
-- `/` redirects to `/${lastActiveMode}`. Deep links open in the mode they belong to.
+- `/` and the signed-in welcome route send students to `/buy`; after login students always start at `/buy`.
+  Seeded administrators go to `/admin`. After landing, students may navigate throughout the regular marketplace,
+  while `/admin/*` remains restricted to administrators.
 - Unauthenticated → `/welcome`. Authenticated but unverified → `/verify`.
 
 ### 3.4 Links between the two modes
@@ -198,9 +202,10 @@ dense card grids, sticky bars, instant feedback, skeleton loaders. Nothing decor
 
 ### 5.1 Home (`/buy`)
 
-Location chip · search bar with suggestions · category rail (Books, Electronics, Lab & Drafting, Bags, Furniture,
-Stationery, Other) · **Near you** strip (distance chips, e.g. "0.4 km") · **Just listed** grid (2 columns mobile,
-3–4 desktop, infinite scroll) · sell-nudge card · floating cart bar when the cart is not empty.
+Location chip · search bar with suggestions · four featured category cards (Books & study materials, Calculators,
+Electronics & accessories, Lab equipment) with a **See all** link to `/buy/categories` for every category ·
+**Near you** strip (distance chips, e.g. "0.4 km") · **Just listed** grid (2 columns mobile, 3–4 desktop, infinite
+scroll) · sell-nudge card · floating cart bar when the cart is not empty.
 Listing card: image, title (2 lines), price, condition badge, seller first name + rating, distance.
 
 ### 5.2 Search and filters (FR-4, FR-5, FR-6)
@@ -235,12 +240,22 @@ States: `ACTIVE` (normal) · `PENDING` ("Reserved — someone is buying this") �
 Tabs Active / Completed / Cancelled. Detail timeline: **Placed → Confirmed by seller → Completed**
 (or Cancelled). After campus handover, the buyer and seller each approve completion from their own order view.
 The order becomes `COMPLETED` and its listing becomes `SOLD` only after both approvals are recorded.
-Buttons: Message seller, approve completion, Rate seller (only after `COMPLETED`), Cancel (only while `PLACED`).
+Buttons: Message seller, approve completion, Rate seller (only after `COMPLETED`), Cancel (only while `PLACED`
+and before either participant approves completion), and **Download invoice**. Buyers can download a PDF order
+record for their own orders, including cancelled orders. It includes buyer/seller identity, the seller's phone
+number and campus pickup preference when provided, buyer handover notes, order and item details, quantity, order
+status, COD payment status, and the amount in rupees. The PDF uses the public Supabase Storage logo configured
+by `INVOICE_LOGO_URL` and the canonical application URL configured by `INVOICE_APP_URL`; development may use the
+local logo and `CLIENT_ORIGIN`. Resello adds no shipping fee, tax, or platform fee; peer-to-peer items are sold
+as-is between buyer and seller, and the document is an order record, not a tax invoice. A successful buyer cancellation releases the reserved listing
+back to `ACTIVE` so it can be purchased by another buyer.
 
 ### 5.6 Wishlist, reviews
 
-Wishlist: saved listings, move to cart, remove. Review (Rate and Review activity diagram): only for a
-`COMPLETED` order, one review per order, 1–5 stars plus optional comment; seller's average rating updates.
+Wishlist: saved listings are persisted to the user's account, can be moved to cart or removed, and are
+synchronized across devices. When checkout successfully reserves a listing, it is removed from every
+user's wishlist; failed checkouts leave wishlists unchanged. Review (Rate and Review activity diagram):
+only for a `COMPLETED` order, one review per order, 1–5 stars plus optional comment; seller's average rating updates.
 
 ---
 
@@ -254,14 +269,21 @@ sales summary (sum of completed order totals, split Online vs COD; **record only
 
 ### 6.2 My listings (`/sell/listings`)
 
-Tabs Active / Reserved / Sold / Removed. Actions: edit, delete, mark sold. A listing removed by an admin
-shows the reason. Reserved listings cannot be edited or deleted until the order resolves.
+Tabs Active / Reserved / Sold / Removed. Actions: edit, remove, mark sold. Sellers can remove only their own
+active listings; removal marks the listing `REMOVED` so it disappears from the buyer marketplace while remaining
+in the seller's Removed tab. Reserved and sold listings cannot be edited or removed. A listing removed by an admin
+shows the reason.
 
 ### 6.3 Quick List (`/sell/listings/new`)
 
 Goal: a returning seller posts in under a minute.
 Photos first (camera or gallery, up to 5, first is the cover) with per-image upload progress →
 title → category → condition → price → description → location (default from onboarding) → **Post**.
+The seller must select one project-relevant category: Books & study materials, Calculators, Electronics &
+accessories, Lab equipment, Lab & drafting supplies, Engineering tools & kits, Stationery, Bags & backpacks,
+Hostel essentials, Furniture, Sports & fitness, Cycles & transport, Clothing & accessories, Art & hobby
+supplies, or Other finds. The chosen category is saved on the listing and powers the matching Buy home tile
+and buyer category filter; it is not inferred from the title or description.
 Images upload straight to Cloudinary using **server-signed** parameters. A failed upload shows an error with
 **Retry** or **Cancel** and the listing is not published until images succeed (Create Listing activity diagram).
 Field validation errors return the seller to the form. On success the listing is `ACTIVE` and appears in other users' Buy feeds.
@@ -290,10 +312,14 @@ Average rating, star distribution, list of reviews. Read-only.
 
 ## 8. Admin (`/admin`, role `ADMIN` only)
 
-Dashboard (users, active listings, orders, revenue) · Moderation console (UC24 remove listing, UC25 suspend user, per the
-Moderate activity diagram: dismiss / remove one listing / suspend account, with notification and audit log) ·
-User management (UC23) · Transactions and disputes (UC26, UC27).
-Suspending a user revokes their sessions, blocks login in both storefronts and delists their active listings.
+Dashboard (student accounts, suspended accounts, active and reserved listings, orders, gross completed COD order value) ·
+Moderation console (UC24 remove an active listing, UC25 suspend user, per the Moderate activity diagram: dismiss / remove
+one listing / suspend account, with notification and audit log) · User management (UC23) · Transaction records (UC26, UC27) ·
+Seller reviews (read-only ratings and review comments, including the seller and reviewer identities).
+Suspending a user revokes their sessions, blocks login in both storefronts and delists their active listings. Restoring
+an account does not republish listings removed during suspension. Admin actions require a reason. The dashboard's COD
+order value is not Resello platform earnings. Admin access is limited to an existing verified college account promoted
+by the development seed process; no default administrator password is stored in source or docs.
 
 ---
 

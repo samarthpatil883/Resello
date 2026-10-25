@@ -161,6 +161,10 @@ Auto-advance between boxes, support paste of all six digits, `inputmode="numeric
 
 Own listings never appear here. Skeleton cards while loading. Empty state (no listings nearby): "Nothing listed near you yet — be the first to sell" + button to Sell.
 
+The home category section shows only four featured categories: Books & study materials, Calculators,
+Electronics & accessories, and Lab equipment. Its **See all** link opens `/buy/categories`, which lists every
+category; choosing any category opens its filtered marketplace results.
+
 Search uses a compact, wrapping filter strip:
 
 ```
@@ -272,11 +276,17 @@ buttons **View orders** and **Keep browsing**.
 | Seller: [ Approve completion ]     |
 | Order completes after both approve |
 | [ Cancel order ]  only while Placed|
+| [ Download invoice ]               |
 +------------------------------------+
 ```
 
 Statuses map exactly to `PLACED → CONFIRMED → COMPLETED` (or `CANCELLED`). Both buyer and seller must approve handover;
-after Completed, show **Rate seller** to the buyer.
+after Completed, show **Rate seller** to the buyer. Buyers can download a PDF order record for any of their orders.
+The record includes buyer and seller details, the seller's phone and campus pickup preference when provided,
+buyer handover notes, item, date, status, COD payment information and rupee totals. It displays the public
+Supabase Storage logo and canonical application URL from `INVOICE_LOGO_URL` and `INVOICE_APP_URL` (with local
+development fallbacks), wraps the complete no-fees/no-tax disclaimer, states that peer-to-peer items are sold
+as-is, and makes clear that the document is an order record rather than a tax invoice.
 
 ---
 
@@ -343,7 +353,13 @@ Empty state (no listings yet): illustration + "Post your first item in under a m
 |  100%    60%                       |
 | Title                              |
 | [ Engineering Maths III        ]   |
-| Category   [ Books            v ]  |
+| Category   [ Choose a category v ] |
+| Books & study materials · Calculators · Electronics & accessories |
+| Lab equipment · Lab & drafting supplies · Engineering tools & kits |
+| Stationery · Bags & backpacks · Hostel essentials · Furniture |
+| Sports & fitness · Cycles & transport · Clothing & accessories |
+| Art & hobby supplies · Other finds |
+| Choose one: Books, Electronics, Lab & drafting, or Other finds. |
 | Condition  (o) Like new ( ) Good   |
 |            ( ) Fair     ( ) Poor   |
 | Price      [ ₹ 250 ]  Similar ~₹280|
@@ -418,7 +434,37 @@ top bar in Buy only; **+ Sell an item** appears in the top bar in Sell only. At 
 
 ---
 
-## 6. Component inventory
+## 6. Admin console (`/admin`, seeded ADMIN role only)
+
+Admin routes do not render the Buy/Sell switcher. Sign-in uses the same verified college account and HttpOnly-cookie
+session as the marketplace; only an account promoted by the development seed command can enter the console. After
+sign-in, an admin lands on the Admin console. The admin navigation does not expose Buy or Sell storefront links.
+
+```
++----------------------------------------------------------------------------------------+
+| RESELLO | ADMIN CONSOLE · Samarth Patil                                  [Sign out]     |
++----------------------+-----------------------------------------------------------------+
+| Overview             | Overview                                                        |
+| Users                | Student accounts, verification status and actions                |
+| Listings             | Search/filter listings; remove active listings with a reason    |
+| Seller reviews       | Ratings and review comments with seller and reviewer details    |
+| Transactions         | Order and payment records; gross COD value is not platform      |
+| Admin activity       | Recent moderation records and totals                            |
++----------------------+-----------------------------------------------------------------+
+```
+
+- Users: searchable and filterable by active/suspended state; each record shows verification, listing and order counts.
+  Suspension/restoration requires a reason. Suspension revokes sessions and removes active listings; restoration does
+  not republish removed inventory.
+- Listings: searchable and filterable by lifecycle status. Only active listings can be removed. All moderation
+  actions require a reason and appear in the admin activity log.
+- Seller reviews: paginated, read-only ratings and comments with seller and reviewer details and the related item.
+- Transactions: paginated orders with item, buyer, seller, amount, order status and payment status.
+- Every data section has loading, empty, and retryable error states. The layout collapses to a single column on mobile.
+
+---
+
+## 7. Component inventory
 
 | Component                                                                                                        | Notes                                                                                                                                       |
 | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -437,7 +483,7 @@ Every data screen must implement four states: **loading** (skeleton), **empty**,
 
 ---
 
-## 7. Accessibility checklist
+## 8. Accessibility checklist
 
 - Switcher: tablist semantics, visible focus ring, arrow keys, Enter/Space, `aria-live` announcement after switching.
 - All text/background pairs at least 4.5:1 (see the token table in the spec); the primary button is white on `#C2410C`.
@@ -448,7 +494,7 @@ Every data screen must implement four states: **loading** (skeleton), **empty**,
 
 ---
 
-## 8. Copy deck (key messages)
+## 9. Copy deck (key messages)
 
 | Situation               | Text                                                              |
 | ----------------------- | ----------------------------------------------------------------- |

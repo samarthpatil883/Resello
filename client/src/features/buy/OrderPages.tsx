@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { Download } from 'lucide-react';
 import { api, getApiErrorMessage } from '../../lib/api';
 
 type OrderSide = 'buyer' | 'seller';
@@ -104,6 +105,8 @@ export function OrderPage({ side }: { side: OrderSide }) {
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null);
+  const [invoiceError, setInvoiceError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [filter, setFilter] = useState<'ALL' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'>('ALL');
 
@@ -142,6 +145,46 @@ export function OrderPage({ side }: { side: OrderSide }) {
       setActionError(getApiErrorMessage(requestError));
     } finally {
       setBusyOrderId(null);
+    }
+  }
+
+  async function cancelOrder(order: MarketplaceOrder) {
+    const confirmed = window.confirm(
+      `Cancel your order for "${order.title}"? If cancelled, the item will be available to other buyers again.`,
+    );
+    if (!confirmed) return;
+
+    setBusyOrderId(order.id);
+    setActionError(null);
+    try {
+      await api.post(`/orders/${order.id}/cancel`);
+      await reloadOrders();
+    } catch (requestError) {
+      setActionError(getApiErrorMessage(requestError));
+    } finally {
+      setBusyOrderId(null);
+    }
+  }
+
+  async function downloadInvoice(orderId: string) {
+    setDownloadingInvoiceId(orderId);
+    setInvoiceError(null);
+    try {
+      const response = await api.get<Blob>(`/orders/${orderId}/invoice`, {
+        responseType: 'blob',
+      });
+      const objectUrl = URL.createObjectURL(response.data);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = `Resello-invoice-${orderId}.pdf`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    } catch (requestError) {
+      setInvoiceError(getApiErrorMessage(requestError));
+    } finally {
+      setDownloadingInvoiceId(null);
     }
   }
 
@@ -245,6 +288,11 @@ export function OrderPage({ side }: { side: OrderSide }) {
             const otherSide: OrderSide = side === 'buyer' ? 'seller' : 'buyer';
             const otherApproval = order.completionApprovals[otherSide];
             const completable = order.status === 'PLACED' || order.status === 'CONFIRMED';
+            const cancellable =
+              side === 'buyer' &&
+              order.status === 'PLACED' &&
+              !order.completionApprovals.buyer &&
+              !order.completionApprovals.seller;
             return (
               <article
                 key={order.id}
@@ -269,6 +317,27 @@ export function OrderPage({ side }: { side: OrderSide }) {
                     {statusLabels[order.status]}
                   </span>
                 </div>
+
+                {side === 'buyer' && (
+                  <div className="grid gap-2">
+                    <button
+                      type="button"
+                      className="button button-secondary w-fit"
+                      disabled={downloadingInvoiceId !== null}
+                      onClick={() => void downloadInvoice(order.id)}
+                    >
+                      <Download size={17} />
+                      {downloadingInvoiceId === order.id
+                        ? 'Preparing invoice…'
+                        : 'Download invoice'}
+                    </button>
+                    {invoiceError && (
+                      <p role="alert" className="text-sm text-red-800">
+                        {invoiceError}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {order.status !== 'CANCELLED' && (
                   <div className="grid gap-2 rounded-xl bg-slate-50 p-3 text-sm sm:grid-cols-2">
@@ -320,6 +389,17 @@ export function OrderPage({ side }: { side: OrderSide }) {
                     Your approval is saved. The order will complete when the {otherSide} approves
                     too.
                   </p>
+                )}
+
+                {cancellable && (
+                  <button
+                    type="button"
+                    className="button button-secondary w-fit"
+                    disabled={busyOrderId !== null}
+                    onClick={() => void cancelOrder(order)}
+                  >
+                    {busyOrderId === order.id ? 'Cancelling order…' : 'Cancel order'}
+                  </button>
                 )}
 
                 {order.status === 'COMPLETED' && side === 'buyer' && order.rating === null && (

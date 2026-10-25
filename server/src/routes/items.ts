@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
-import { ConditionType } from '@resello/shared';
+import { ConditionType, ListingCategory } from '@resello/shared';
 import { requireAuth } from '../middleware/auth';
 import { asyncHandler, getAuthenticatedUser, HttpError } from '../middleware/errors';
 import { ITEM_IMAGE_CONTENT_TYPES, type ItemImageContentType } from '../models/Item';
@@ -16,6 +16,7 @@ import {
   MAX_ITEM_IMAGE_BYTES,
   MAX_ITEM_IMAGES,
   MAX_ITEM_IMAGES_TOTAL_BYTES,
+  removeSellerItem,
   updateSellerItem,
 } from '../services/items';
 
@@ -70,6 +71,7 @@ const buyerItemFiltersSchema = z
     minPrice: z.coerce.number().finite().nonnegative().optional(),
     maxPrice: z.coerce.number().finite().nonnegative().optional(),
     condition: z.nativeEnum(ConditionType).optional(),
+    category: z.nativeEnum(ListingCategory).optional(),
     newOnly: z
       .enum(['true', 'false'])
       .optional()
@@ -157,6 +159,7 @@ router.post(
         description: z.string().trim().min(1).max(2000),
         price: z.coerce.number().finite().positive().max(10_000_000),
         condition: z.nativeEnum(ConditionType),
+        category: z.nativeEnum(ListingCategory),
       })
       .parse(req.body);
 
@@ -168,6 +171,7 @@ router.post(
       description: body.description,
       price: body.price,
       condition: body.condition,
+      category: body.category,
       location:
         user.campusLocation?.coordinates?.length === 2
           ? {
@@ -202,6 +206,7 @@ router.get(
       minPrice: filters.minPrice,
       maxPrice: filters.maxPrice,
       condition: filters.condition,
+      category: filters.category,
       newOnly: filters.newOnly,
       maxDistanceKm: filters.maxDistanceKm,
       latitude: filters.latitude,
@@ -257,6 +262,7 @@ router.patch(
         description: z.string().trim().min(1).max(2000),
         price: z.coerce.number().finite().positive().max(10_000_000),
         condition: z.nativeEnum(ConditionType),
+        category: z.nativeEnum(ListingCategory),
       })
       .parse(req.body);
     const itemId = req.params.itemId;
@@ -268,6 +274,20 @@ router.patch(
       ...body,
       images: parseUploadedImages(files),
     });
+    res.status(200).json({ item });
+  }),
+);
+
+router.delete(
+  '/items/:itemId',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const user = getAuthenticatedUser(req);
+    const itemId = req.params.itemId;
+    if (typeof itemId !== 'string') {
+      throw new HttpError(400, 'INVALID_ITEM_ID', 'The item ID is invalid.');
+    }
+    const item = await removeSellerItem(user._id.toString(), itemId);
     res.status(200).json({ item });
   }),
 );

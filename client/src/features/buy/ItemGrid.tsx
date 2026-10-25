@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { ConditionType } from '@resello/shared';
+import { LISTING_CATEGORIES, type ConditionType, type ListingCategory } from '@resello/shared';
 import { api, getApiErrorMessage } from '../../lib/api';
 import type { Item } from './marketplaceStore';
 
@@ -11,7 +11,7 @@ interface BuyerLocation {
 
 interface ItemGridProps {
   query?: string;
-  category?: string;
+  category?: ListingCategory;
   minPrice?: number;
   maxPrice?: number;
   condition?: ConditionType;
@@ -37,7 +37,7 @@ const conditionLabels: Record<ConditionType, string> = {
 
 export function ItemGrid({
   query = '',
-  category = '',
+  category,
   minPrice,
   maxPrice,
   condition,
@@ -83,6 +83,7 @@ export function ItemGrid({
           minPrice,
           maxPrice,
           condition,
+          category,
           newOnly,
           maxDistanceKm,
           sort,
@@ -111,6 +112,7 @@ export function ItemGrid({
     buyerLocation?.latitude,
     buyerLocation?.longitude,
     buyerLocation,
+    category,
     condition,
     maxDistanceKm,
     maxPrice,
@@ -186,12 +188,7 @@ export function ItemGrid({
     );
   }
 
-  const visibleItems = items.filter((item) => {
-    const matchesCategory =
-      !category ||
-      `${item.title} ${item.description}`.toLowerCase().includes(category.toLowerCase());
-    return matchesCategory;
-  });
+  const visibleItems = items;
 
   if (visibleItems.length === 0) {
     const hasActiveFilters = Boolean(
@@ -246,6 +243,12 @@ export function ItemGrid({
                 {item.condition && (
                   <span className="rounded-full bg-slate-100 px-2 py-1">
                     {conditionLabels[item.condition]}
+                  </span>
+                )}
+                {item.category && (
+                  <span className="rounded-full bg-indigo-50 px-2 py-1 text-indigo-800">
+                    {LISTING_CATEGORIES.find((category) => category.value === item.category)
+                      ?.label ?? item.category}
                   </span>
                 )}
                 {item.distance_km !== undefined && (

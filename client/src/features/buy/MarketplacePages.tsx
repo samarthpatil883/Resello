@@ -12,6 +12,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext';
 import { api, getApiErrorMessage } from '../../lib/api';
 import { EMPTY_MARKETPLACE_ITEMS, useMarketplaceStore, type Item } from './marketplaceStore';
+import { deleteWishlistItem, refreshWishlist, saveWishlistItem } from './wishlistApi';
 
 const priceFormatter = new Intl.NumberFormat('en-IN', {
   style: 'currency',
@@ -129,6 +130,8 @@ export function BuyListingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
+  const [wishlistError, setWishlistError] = useState<string | null>(null);
+  const [wishlistBusy, setWishlistBusy] = useState(false);
   const cart = useMarketplaceStore(
     (state) => state.cartByUser[user?._id ?? ''] ?? EMPTY_MARKETPLACE_ITEMS,
   );
@@ -136,7 +139,6 @@ export function BuyListingPage() {
     (state) => state.wishlistByUser[user?._id ?? ''] ?? EMPTY_MARKETPLACE_ITEMS,
   );
   const addToCart = useMarketplaceStore((state) => state.addToCart);
-  const toggleWishlist = useMarketplaceStore((state) => state.toggleWishlist);
 
   useEffect(() => {
     let active = true;
@@ -162,6 +164,25 @@ export function BuyListingPage() {
   const isSaved = wishlist.some((savedItem) => savedItem.id === id);
   const isInCart = cart.some((cartItem) => cartItem.id === id);
   const available = item?.status === 'ACTIVE' && !isOwner;
+
+  async function toggleSavedItem() {
+    if (!user || !item) return;
+    setWishlistBusy(true);
+    setWishlistError(null);
+    try {
+      if (isSaved) {
+        await deleteWishlistItem(user._id, item.id);
+        setNotice('Removed from your wishlist.');
+      } else {
+        await saveWishlistItem(user._id, item);
+        setNotice('Saved to your wishlist.');
+      }
+    } catch (requestError) {
+      setWishlistError(getApiErrorMessage(requestError));
+    } finally {
+      setWishlistBusy(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -196,11 +217,8 @@ export function BuyListingPage() {
           type="button"
           aria-label={isSaved ? 'Remove from wishlist' : 'Add to wishlist'}
           aria-pressed={isSaved}
-          onClick={() => {
-            if (!user) return;
-            toggleWishlist(user._id, item);
-            setNotice(isSaved ? 'Removed from your wishlist.' : 'Saved to your wishlist.');
-          }}
+          disabled={wishlistBusy || !available}
+          onClick={() => void toggleSavedItem()}
           className="absolute right-4 top-4 grid h-12 w-12 place-items-center rounded-full bg-white text-rose-600 shadow-md transition hover:scale-105"
         >
           <Heart size={22} fill={isSaved ? 'currentColor' : 'none'} />
@@ -208,6 +226,11 @@ export function BuyListingPage() {
       </section>
 
       <section className="grid content-start gap-5 rounded-3xl bg-white p-5 shadow-sm sm:p-7">
+        {wishlistError && (
+          <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
+            {wishlistError}
+          </p>
+        )}
         <Link
           to="/buy"
           className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-slate-600 hover:text-teal-800"
@@ -285,13 +308,10 @@ export function BuyListingPage() {
             </button>
             <button
               type="button"
-              disabled={!available}
+              disabled={!available || wishlistBusy}
               aria-pressed={isSaved}
               className="button button-secondary button-wide sm:col-span-2"
-              onClick={() => {
-                toggleWishlist(user!._id, item);
-                setNotice(isSaved ? 'Removed from your wishlist.' : 'Saved to your wishlist.');
-              }}
+              onClick={() => void toggleSavedItem()}
             >
               <Heart size={18} fill={isSaved ? 'currentColor' : 'none'} />
               {isSaved ? 'Saved to wishlist' : 'Add to wishlist'}
@@ -384,11 +404,70 @@ export function BuyCartPage() {
 
 export function BuyWishlistPage() {
   const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [busyItemId, setBusyItemId] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
   const items = useMarketplaceStore(
     (state) => state.wishlistByUser[user?._id ?? ''] ?? EMPTY_MARKETPLACE_ITEMS,
   );
-  const removeFromWishlist = useMarketplaceStore((state) => state.removeFromWishlist);
   const addToCart = useMarketplaceStore((state) => state.addToCart);
+
+  useEffect(() => {
+    if (!user?._id) return;
+    let active = true;
+    setLoading(true);
+    setLoadError(null);
+    refreshWishlist(user._id)
+      .catch((requestError: unknown) => {
+        if (active) setLoadError(getApiErrorMessage(requestError));
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user?._id, reloadToken]);
+
+  async function removeItem(itemId: string) {
+    if (!user) return;
+    setBusyItemId(itemId);
+    setActionError(null);
+    try {
+      await deleteWishlistItem(user._id, itemId);
+    } catch (requestError) {
+      setActionError(getApiErrorMessage(requestError));
+    } finally {
+      setBusyItemId(null);
+    }
+  }
+
+  if (loading) {
+    return (
+      <main className="mx-auto grid max-w-3xl gap-4 p-6" aria-busy="true">
+        <p className="animate-pulse rounded-xl bg-white p-6">Loading your wishlist…</p>
+      </main>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <main className="mx-auto grid max-w-3xl gap-4 p-6">
+        <p className="rounded-xl bg-red-50 p-4 text-red-800" role="alert">
+          {loadError}
+        </p>
+        <button
+          type="button"
+          className="button button-secondary w-fit"
+          onClick={() => setReloadToken((token) => token + 1)}
+        >
+          Retry
+        </button>
+      </main>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -409,6 +488,11 @@ export function BuyWishlistPage() {
         <p className="text-sm font-bold uppercase tracking-wider text-teal-800">Saved for later</p>
         <h1 className="mt-2 text-3xl font-bold">Your wishlist</h1>
       </header>
+      {actionError && (
+        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
+          {actionError}
+        </p>
+      )}
       <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {items.map((item) => (
           <article
@@ -433,7 +517,8 @@ export function BuyWishlistPage() {
               <button
                 type="button"
                 className="button button-secondary button-wide"
-                onClick={() => user && removeFromWishlist(user._id, item.id)}
+                disabled={busyItemId === item.id}
+                onClick={() => void removeItem(item.id)}
               >
                 <Heart size={17} /> Remove
               </button>
@@ -463,6 +548,9 @@ export function BuyCheckoutPage() {
     (state) => state.cartByUser[user?._id ?? ''] ?? EMPTY_MARKETPLACE_ITEMS,
   );
   const clearCart = useMarketplaceStore((state) => state.clearCart);
+  const removeItemsFromAllWishlists = useMarketplaceStore(
+    (state) => state.removeItemsFromAllWishlists,
+  );
   const itemIds = useMemo(
     () => (directItemId ? [directItemId] : cartItems.map((item) => item.id)),
     [cartItems, directItemId],
@@ -520,6 +608,7 @@ export function BuyCheckoutPage() {
           user._id,
           items.map((item) => item.id),
         );
+      removeItemsFromAllWishlists(items.map((item) => item.id));
     } catch (requestError) {
       setError(getApiErrorMessage(requestError));
     } finally {

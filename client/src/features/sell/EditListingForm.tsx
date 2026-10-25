@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ConditionType } from '@resello/shared';
+import { ConditionType, LISTING_CATEGORIES, ListingCategory } from '@resello/shared';
 import { api, getApiErrorMessage } from '../../lib/api';
 import { useAuth } from '../auth/AuthContext';
 import type { Item } from '../buy/marketplaceStore';
@@ -22,6 +22,7 @@ export function EditListingForm({ itemId }: { itemId: string }) {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [condition, setCondition] = useState<ConditionType | ''>('');
+  const [category, setCategory] = useState<ListingCategory | ''>('');
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +48,7 @@ export function EditListingForm({ itemId }: { itemId: string }) {
         setDescription(data.item.description);
         setPrice(String(data.item.price));
         setCondition(data.item.condition ?? '');
+        setCategory(data.item.category ?? '');
       })
       .catch((requestError: unknown) => {
         if (active) setError(getApiErrorMessage(requestError));
@@ -89,6 +91,7 @@ export function EditListingForm({ itemId }: { itemId: string }) {
       formData.append('description', description.trim());
       formData.append('price', price);
       formData.append('condition', condition);
+      formData.append('category', category);
       images.forEach((image) => formData.append('images', image));
       await api.patch(`/items/${item.id}`, formData);
       navigate('/sell/listings', { replace: true });
@@ -183,6 +186,27 @@ export function EditListingForm({ itemId }: { itemId: string }) {
           value={title}
           onChange={(event) => setTitle(event.target.value)}
         />
+      </label>
+
+      <label
+        className="grid gap-2 text-sm font-semibold text-slate-700"
+        htmlFor="edit-listing-category"
+      >
+        Category
+        <select
+          id="edit-listing-category"
+          className="min-h-12 rounded-xl border border-slate-300 bg-white px-4 font-normal outline-none transition focus:border-indigo-700 focus:ring-4 focus:ring-indigo-100"
+          required
+          value={category}
+          onChange={(event) => setCategory(event.target.value as ListingCategory | '')}
+        >
+          <option value="">Choose a category</option>
+          {LISTING_CATEGORIES.map(({ value, label }) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
       </label>
 
       <label

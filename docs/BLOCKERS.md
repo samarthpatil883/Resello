@@ -5,17 +5,20 @@ Agents use mocks/stubs and keep building.
 
 ## Credentials Needed
 
-| Credential                                       | Needed for                                  | Status     | Workaround                                                                             |
-| ------------------------------------------------ | ------------------------------------------- | ---------- | -------------------------------------------------------------------------------------- |
-| Cloudinary cloud name, API key, API secret       | Image uploads (G2)                          | ❌ Missing | Stub upload service, skip image upload in dev                                          |
-| Razorpay test key ID, key secret, webhook secret | Payments (G3)                               | ❌ Missing | Mock payment verification, skip gateway call                                           |
-| Google Maps API key                              | Reverse-geocoded location labels (optional) | ❌ Missing | Browser geolocation and MongoDB 2dsphere support distance filtering without map labels |
-| JWT access secret                                | Auth tokens (G1)                            | ❌ Missing | Use placeholder in .env, document in setup                                             |
-| JWT refresh secret                               | Token refresh (G1)                          | ❌ Missing | Use placeholder in .env, document in setup                                             |
-| OTP secret                                       | OTP HMAC (G1)                               | ❌ Missing | Use placeholder in .env, document in setup                                             |
-| SMTP provider (production)                       | Real email delivery (G5)                    | ❌ Missing | Mailpit in dev                                                                         |
-| MongoDB Atlas cluster (production)               | Production database (G5)                    | ❌ Missing | Local MongoDB via Docker                                                               |
-| ADMIN_SEED_EMAIL                                 | Admin account seed (G1)                     | ❌ Missing | Default to admin@pccoepune.org in seed                                                 |
+| Credential                                       | Needed for                                                   | Status     | Workaround                                                                                                                  |
+| ------------------------------------------------ | ------------------------------------------------------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Cloudinary cloud name, API key, API secret       | Image uploads (G2)                                           | ❌ Missing | Stub upload service, skip image upload in dev                                                                               |
+| Razorpay test key ID, key secret, webhook secret | Payments (G3)                                                | ❌ Missing | Mock payment verification, skip gateway call                                                                                |
+| Google Maps API key                              | Reverse-geocoded location labels (optional)                  | ❌ Missing | Browser geolocation and MongoDB 2dsphere support distance filtering without map labels                                      |
+| JWT access secret                                | Auth tokens (G1)                                             | ❌ Missing | Use placeholder in .env, document in setup                                                                                  |
+| JWT refresh secret                               | Token refresh (G1)                                           | ❌ Missing | Use placeholder in .env, document in setup                                                                                  |
+| OTP secret                                       | OTP HMAC (G1)                                                | ❌ Missing | Use placeholder in .env, document in setup                                                                                  |
+| SMTP provider (production)                       | Real email delivery (G5)                                     | ❌ Missing | Mailpit in dev                                                                                                              |
+| MongoDB Atlas cluster (production)               | Production database (G5)                                     | ❌ Missing | Local MongoDB via Docker                                                                                                    |
+| Verified admin account                           | Admin account seed (G1)                                      | ⚠️ Pending | `ADMIN_SEED_EMAIL` is configured locally; register and verify that college account, then run `npm run seed:admin -w server` |
+| Admin moderation notices                         | Notify affected students after admin actions                 | ❌ Missing | The repository has no notification persistence/API yet; admin changes are currently recorded in the admin audit log only    |
+| Public invoice logo URL                          | Embed the high-resolution Resello logo from Supabase Storage | ❌ Missing | Set `INVOICE_LOGO_URL` to the public Supabase Storage object URL; development uses the repository logo                      |
+| Official production app URL                      | Print the canonical Resello URL on invoices                  | ❌ Missing | Set `INVOICE_APP_URL`; development falls back to `CLIENT_ORIGIN`                                                            |
 
 ## Decisions Needed
 
@@ -25,6 +28,18 @@ Agents use mocks/stubs and keep building.
 | Auto-completion policy  | What happens if buyer never taps "I received it"         | ❌ Out of scope for v1 |
 | Real PCCOE email format | Confirm name.surname24 is universal                      | ❌ Assumed for now     |
 | Google Workspace status | Whether PCCOE uses Google Workspace (for Google Sign-In) | ❌ Not required for v1 |
+
+## Administrator account policy
+
+The supplied Gmail account cannot be used as a Resello administrator: admin access follows the college-email-only
+policy and is granted only to an existing verified PCCOE account by the development seed command. No supplied
+password is stored in source, documentation, or Git. `ADMIN_SEED_EMAIL` is configured locally, but the seed attempt
+confirmed that account has not yet been registered and verified in the local database. Complete the normal registration
+and email-verification flow, then rerun `npm run seed:admin -w server`.
+
+Admin moderation notifications are not yet delivered. The notification model and API are not implemented in this
+repository, so the admin feature currently satisfies the audit-log requirement but not the separate user-notification
+requirement from the moderation activity diagram.
 
 ## Listing storage decision
 

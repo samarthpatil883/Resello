@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { ConditionType } from '@resello/shared';
+import { ConditionType, LISTING_CATEGORIES, ListingCategory } from '@resello/shared';
 import { api, getApiErrorMessage } from '../../lib/api';
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -12,6 +12,7 @@ export function CreateListingForm() {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [condition, setCondition] = useState<ConditionType | ''>('');
+  const [category, setCategory] = useState<ListingCategory | ''>('');
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -68,6 +69,7 @@ export function CreateListingForm() {
       formData.append('description', description.trim());
       formData.append('price', price);
       formData.append('condition', condition);
+      formData.append('category', category);
       images.forEach((image) => formData.append('images', image));
       await api.post('/items', formData);
 
@@ -75,6 +77,7 @@ export function CreateListingForm() {
       setDescription('');
       setPrice('');
       setCondition('');
+      setCategory('');
       setImages([]);
       if (imageInputRef.current) imageInputRef.current.value = '';
       setSuccess('Your item and photos are live in the Buy marketplace.');
@@ -106,6 +109,24 @@ export function CreateListingForm() {
           onChange={(event) => setTitle(event.target.value)}
           placeholder="e.g. Engineering Mathematics textbook"
         />
+      </label>
+
+      <label className="grid gap-2 text-sm font-semibold text-slate-700" htmlFor="listing-category">
+        Category
+        <select
+          id="listing-category"
+          className="min-h-12 rounded-xl border border-slate-300 bg-white px-4 font-normal outline-none transition focus:border-indigo-700 focus:ring-4 focus:ring-indigo-100"
+          required
+          value={category}
+          onChange={(event) => setCategory(event.target.value as ListingCategory | '')}
+        >
+          <option value="">Choose a category</option>
+          {LISTING_CATEGORIES.map(({ value, label }) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
       </label>
 
       <label

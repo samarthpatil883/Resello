@@ -5,23 +5,26 @@ The seed script (`server/src/scripts/seed.ts`, built in G1) populates the develo
 
 ## Categories (7)
 
-| Name | Slug | Icon |
-|------|------|------|
-| Books | books | book-open |
-| Electronics | electronics | laptop |
-| Lab & Drafting | lab-drafting | ruler |
-| Bags | bags | briefcase |
-| Furniture | furniture | armchair |
-| Stationery | stationery | pen-tool |
-| Other | other | package |
+| Name           | Slug         | Icon      |
+| -------------- | ------------ | --------- |
+| Books          | books        | book-open |
+| Electronics    | electronics  | laptop    |
+| Lab & Drafting | lab-drafting | ruler     |
+| Bags           | bags         | briefcase |
+| Furniture      | furniture    | armchair  |
+| Stationery     | stationery   | pen-tool  |
+| Other          | other        | package   |
 
 ## Users (3)
 
-| Role | Email | Password (dev only) | Notes |
-|------|-------|-------------------|-------|
-| Student (buyer) | test.buyer24@pccoepune.org | TestBuyer@123 | Verified, seller NOT onboarded |
-| Student (seller) | test.seller24@pccoepune.org | TestSeller@123 | Verified, seller onboarded, has listings |
-| Admin | (from ADMIN_SEED_EMAIL env var) | AdminResello@123 | role=ADMIN, verified |
+| Role             | Email                           | Password (dev only) | Notes                                                                                         |
+| ---------------- | ------------------------------- | ------------------- | --------------------------------------------------------------------------------------------- |
+| Student (buyer)  | test.buyer24@pccoepune.org      | TestBuyer@123       | Verified, seller NOT onboarded                                                                |
+| Student (seller) | test.seller24@pccoepune.org     | TestSeller@123      | Verified, seller onboarded, has listings                                                      |
+| Admin            | (from ADMIN_SEED_EMAIL env var) | No default password | Must be an existing verified PCCOE account promoted by `seed:admin`; use its account password |
+
+Never put an administrator password in this file, source control, or the seed script. The admin account uses the
+same verified college-email authentication as other accounts and cannot be self-registered as an administrator.
 
 ## Demo Listings (15)
 

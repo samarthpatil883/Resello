@@ -1,5 +1,5 @@
 import { Schema, Types, model, type HydratedDocument } from 'mongoose';
-import { ConditionType } from '@resello/shared';
+import { ConditionType, ListingCategory } from '@resello/shared';
 
 export const ITEM_IMAGE_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 export type ItemImageContentType = (typeof ITEM_IMAGE_CONTENT_TYPES)[number];
@@ -10,6 +10,7 @@ export interface ItemFields {
   description: string;
   price: number;
   condition?: ConditionType;
+  category?: ListingCategory;
   location?: { type: 'Point'; coordinates: [number, number] } | null;
   imageData?: Buffer;
   imageContentType?: ItemImageContentType;
@@ -30,6 +31,7 @@ const itemSchema = new Schema<ItemFields>(
     description: { type: String, trim: true, maxlength: 2000, required: true },
     price: { type: Number, min: 0.01, max: 10_000_000, required: true },
     condition: { type: String, enum: Object.values(ConditionType) },
+    category: { type: String, enum: Object.values(ListingCategory) },
     location: {
       type: {
         type: String,

@@ -9,6 +9,8 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(5000),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   CLIENT_ORIGIN: z.string().default('http://localhost:5173'),
+  INVOICE_APP_URL: z.union([z.literal(''), z.string().url()]).default(''),
+  INVOICE_LOGO_URL: z.union([z.literal(''), z.string().url()]).default(''),
   MONGODB_URI: z.string().default('mongodb://localhost:27017/resello'),
   ALLOWED_EMAIL_DOMAINS: z.string().default('pccoepune.org'),
   JWT_ACCESS_SECRET: z

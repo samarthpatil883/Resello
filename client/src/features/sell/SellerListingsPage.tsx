@@ -25,6 +25,8 @@ export function SellerListingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [busyItemId, setBusyItemId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -49,6 +51,31 @@ export function SellerListingsPage() {
   }, [reloadKey]);
 
   const visibleItems = items.filter((item) => item.status === activeStatus);
+
+  async function removeListing(item: Item) {
+    if (
+      !window.confirm(
+        `Remove "${item.title}" from the marketplace? It will no longer be available to buyers.`,
+      )
+    ) {
+      return;
+    }
+
+    setBusyItemId(item.id);
+    setActionError(null);
+    try {
+      const response = await api.delete<{ item: Item }>(`/items/${item.id}`);
+      setItems((current) =>
+        current.map((currentItem) =>
+          currentItem.id === item.id ? response.data.item : currentItem,
+        ),
+      );
+    } catch (removeError) {
+      setActionError(getApiErrorMessage(removeError));
+    } finally {
+      setBusyItemId(null);
+    }
+  }
 
   return (
     <div className="storefront-page storefront-page-sell">
@@ -88,6 +115,12 @@ export function SellerListingsPage() {
           );
         })}
       </div>
+
+      {actionError && (
+        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
+          {actionError}
+        </p>
+      )}
 
       {loading ? (
         <div
@@ -160,12 +193,22 @@ export function SellerListingsPage() {
                     View listing
                   </Link>
                   {item.status === 'ACTIVE' ? (
-                    <Link
-                      className="text-indigo-800 underline"
-                      to={`/sell/listings/${item.id}/edit`}
-                    >
-                      Edit listing
-                    </Link>
+                    <>
+                      <Link
+                        className="text-indigo-800 underline"
+                        to={`/sell/listings/${item.id}/edit`}
+                      >
+                        Edit listing
+                      </Link>
+                      <button
+                        type="button"
+                        className="text-red-700 underline disabled:opacity-60"
+                        disabled={busyItemId !== null}
+                        onClick={() => void removeListing(item)}
+                      >
+                        {busyItemId === item.id ? 'Removing…' : 'Remove listing'}
+                      </button>
+                    </>
                   ) : (
                     <span className="text-slate-500">
                       {item.status === 'PENDING'

@@ -1,7 +1,8 @@
 import { Types } from 'mongoose';
-import { ConditionType } from '@resello/shared';
+import { ConditionType, ListingCategory } from '@resello/shared';
 import { Item, type ItemImageContentType } from '../models/Item';
 import { Order } from '../models/Order';
+import { WishlistItem } from '../models/WishlistItem';
 import { HttpError } from '../middleware/errors';
 import { getSellerRatingSummary } from './orders';
 
@@ -18,6 +19,7 @@ export interface ItemRecord {
   image_url: string;
   image_urls: string[];
   condition?: ConditionType;
+  category?: ListingCategory;
   distance_km?: number;
   status: 'ACTIVE' | 'PENDING' | 'SOLD' | 'REMOVED';
   created_at: string;
@@ -28,6 +30,7 @@ export interface BuyerItemFilters {
   minPrice?: number;
   maxPrice?: number;
   condition?: ConditionType;
+  category?: ListingCategory;
   newOnly: boolean;
   maxDistanceKm?: number;
   latitude?: number;
@@ -49,6 +52,7 @@ interface NewItem {
   description: string;
   price: number;
   condition: ConditionType;
+  category: ListingCategory;
   location: { type: 'Point'; coordinates: [number, number] } | null;
   images: Array<{ data: Buffer; contentType: ItemImageContentType }>;
 }
@@ -58,6 +62,7 @@ interface ItemChanges {
   description: string;
   price: number;
   condition: ConditionType;
+  category: ListingCategory;
   images: Array<{ data: Buffer; contentType: ItemImageContentType }>;
 }
 
@@ -65,7 +70,7 @@ function getImageByteLength(data: Buffer | { length: () => number }) {
   return typeof data.length === 'function' ? data.length() : data.length;
 }
 
-function toItemRecord(
+export function toItemRecord(
   item: {
     _id: Types.ObjectId;
     sellerId: Types.ObjectId;
@@ -73,6 +78,7 @@ function toItemRecord(
     description: string;
     price: number;
     condition?: ConditionType;
+    category?: ListingCategory;
     status: ItemRecord['status'];
     createdAt: Date;
     imageCount?: number;
@@ -93,6 +99,7 @@ function toItemRecord(
     image_url: `/items/${item._id.toString()}/image`,
     image_urls,
     ...(item.condition ? { condition: item.condition } : {}),
+    ...(item.category ? { category: item.category } : {}),
     ...(distanceKm !== undefined ? { distance_km: distanceKm } : {}),
     status: item.status,
     created_at: item.createdAt.toISOString(),
@@ -106,6 +113,7 @@ export async function createItem(item: NewItem): Promise<ItemRecord> {
     description: item.description,
     price: item.price,
     condition: item.condition,
+    category: item.category,
     location: item.location,
     images: item.images,
     imageCount: item.images.length,
@@ -160,6 +168,7 @@ export async function checkoutItems(buyerId: string, itemIds: string[], delivery
         buyerId: buyerObjectId,
         sellerId: item.sellerId,
         itemId: item._id,
+        itemTitle: item.title,
         price: item.price,
         status: 'PLACED',
         paymentMethod: 'COD',
@@ -177,6 +186,7 @@ export async function checkoutItems(buyerId: string, itemIds: string[], delivery
         paymentStatus: order.paymentStatus,
       });
     }
+    await WishlistItem.deleteMany({ itemId: { $in: reservedItems.map((item) => item._id) } });
     return orders;
   } catch (error) {
     if (createdOrderIds.length > 0) await Order.deleteMany({ _id: { $in: createdOrderIds } });
@@ -219,6 +229,7 @@ export async function getActiveItemsForBuyer(
     };
   }
   if (filters.condition) match.condition = filters.condition;
+  if (filters.category) match.category = filters.category;
   if (filters.newOnly) {
     match.createdAt = { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) };
   }
@@ -365,6 +376,7 @@ export async function updateSellerItem(
           description: changes.description,
           price: changes.price,
           condition: changes.condition,
+          category: changes.category,
           images: [...legacyImage, ...changes.images],
           imageCount: currentImageCount + changes.images.length,
         },
@@ -376,6 +388,7 @@ export async function updateSellerItem(
           description: changes.description,
           price: changes.price,
           condition: changes.condition,
+          category: changes.category,
           ...(changes.images.length > 0
             ? { imageCount: currentImageCount + changes.images.length }
             : {}),
@@ -396,4 +409,44 @@ export async function updateSellerItem(
     );
   }
   return toItemRecord(updated);
+}
+
+export async function removeSellerItem(sellerId: string, itemId: string): Promise<ItemRecord> {
+  if (!Types.ObjectId.isValid(itemId)) {
+    throw new HttpError(400, 'INVALID_ITEM_ID', 'The item ID is invalid.');
+  }
+
+  const sellerObjectId = new Types.ObjectId(sellerId);
+  const existing = await Item.findOne({ _id: itemId, sellerId: sellerObjectId })
+    .select('_id sellerId title description price condition status createdAt imageCount')
+    .lean();
+  if (!existing) {
+    throw new HttpError(
+      404,
+      'ITEM_NOT_FOUND',
+      'This listing was not found in your seller account.',
+    );
+  }
+  if (existing.status !== 'ACTIVE') {
+    throw new HttpError(
+      409,
+      'ITEM_NOT_REMOVABLE',
+      'Only active listings can be removed. Reserved or sold items cannot be removed.',
+    );
+  }
+
+  const removed = await Item.findOneAndUpdate(
+    { _id: existing._id, sellerId: sellerObjectId, status: 'ACTIVE' },
+    { $set: { status: 'REMOVED' } },
+    { new: true },
+  ).lean();
+  if (!removed) {
+    throw new HttpError(
+      409,
+      'ITEM_NOT_REMOVABLE',
+      'This listing is no longer active and cannot be removed.',
+    );
+  }
+
+  return toItemRecord(removed);
 }

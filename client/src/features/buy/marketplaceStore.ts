@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { ConditionType } from '@resello/shared';
+import type { ConditionType, ListingCategory } from '@resello/shared';
 
 export interface Item {
   id: string;
@@ -9,6 +9,7 @@ export interface Item {
   description: string;
   price: number;
   condition?: ConditionType;
+  category?: ListingCategory;
   distance_km?: number;
   image_url: string;
   image_urls?: string[];
@@ -23,8 +24,9 @@ interface MarketplaceState {
   wishlistByUser: Record<string, Item[]>;
   addToCart: (userId: string, item: Item) => void;
   removeFromCart: (userId: string, itemId: string) => void;
-  toggleWishlist: (userId: string, item: Item) => void;
+  setWishlist: (userId: string, items: Item[]) => void;
   removeFromWishlist: (userId: string, itemId: string) => void;
+  removeItemsFromAllWishlists: (itemIds: string[]) => void;
   clearCart: (userId: string, itemIds: string[]) => void;
 }
 
@@ -46,19 +48,10 @@ export const useMarketplaceStore = create<MarketplaceState>()(
             [userId]: (state.cartByUser[userId] ?? []).filter((item) => item.id !== itemId),
           },
         })),
-      toggleWishlist: (userId, item) =>
-        set((state) => {
-          const items = state.wishlistByUser[userId] ?? [];
-          const exists = items.some((savedItem) => savedItem.id === item.id);
-          return {
-            wishlistByUser: {
-              ...state.wishlistByUser,
-              [userId]: exists
-                ? items.filter((savedItem) => savedItem.id !== item.id)
-                : [...items, item],
-            },
-          };
-        }),
+      setWishlist: (userId, items) =>
+        set((state) => ({
+          wishlistByUser: { ...state.wishlistByUser, [userId]: items },
+        })),
       removeFromWishlist: (userId, itemId) =>
         set((state) => ({
           wishlistByUser: {
@@ -66,6 +59,18 @@ export const useMarketplaceStore = create<MarketplaceState>()(
             [userId]: (state.wishlistByUser[userId] ?? []).filter((item) => item.id !== itemId),
           },
         })),
+      removeItemsFromAllWishlists: (itemIds) =>
+        set((state) => {
+          const purchasedIds = new Set(itemIds);
+          return {
+            wishlistByUser: Object.fromEntries(
+              Object.entries(state.wishlistByUser).map(([userId, items]) => [
+                userId,
+                items.filter((item) => !purchasedIds.has(item.id)),
+              ]),
+            ),
+          };
+        }),
       clearCart: (userId, itemIds) =>
         set((state) => ({
           cartByUser: {

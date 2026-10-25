@@ -15,7 +15,7 @@ import {
 import { useEffect, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ConditionType, Mode } from '@resello/shared';
+import { ConditionType, LISTING_CATEGORIES, ListingCategory, Mode } from '@resello/shared';
 import { api, getApiErrorMessage } from '../../lib/api';
 import { CreateListingForm } from '../sell/CreateListingForm';
 import { EditListingForm } from '../sell/EditListingForm';
@@ -25,12 +25,35 @@ import { ItemGrid } from './ItemGrid';
 export { BuyCartPage } from './MarketplacePages';
 export { BuyOrdersPage, SellOrdersPage } from './OrderPages';
 
-const categories = [
-  { name: 'Books', icon: BookOpen },
-  { name: 'Electronics', icon: Laptop },
-  { name: 'Lab & drafting', icon: Compass },
-  { name: 'Other finds', icon: Sparkles },
-];
+const categoryIcons: Partial<Record<ListingCategory, typeof BookOpen>> = {
+  [ListingCategory.BOOKS]: BookOpen,
+  [ListingCategory.ELECTRONICS]: Laptop,
+  [ListingCategory.LAB_DRAFTING]: Compass,
+};
+const featuredCategories = LISTING_CATEGORIES.slice(0, 4);
+
+function CategoryCards({
+  categories,
+}: {
+  categories: readonly (typeof LISTING_CATEGORIES)[number][];
+}) {
+  return (
+    <div className="category-grid">
+      {categories.map(({ value, label }) => {
+        const Icon = categoryIcons[value] ?? Sparkles;
+        return (
+          <Link key={value} className="category-card" to={`/buy/search?category=${value}`}>
+            <span className="category-icon">
+              <Icon size={22} aria-hidden="true" />
+            </span>
+            <span>{label}</span>
+            <ArrowRight size={15} className="category-arrow" aria-hidden="true" />
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
 
 function PageHeading({
   kicker,
@@ -82,25 +105,11 @@ export function BuyHomePage() {
             <p className="eyebrow">BROWSE BY CATEGORY</p>
             <h2 id="category-title">What are you looking for?</h2>
           </div>
-          <Link to="/buy/search" className="subtle-link">
+          <Link to="/buy/categories" className="subtle-link">
             See all <ArrowRight size={15} />
           </Link>
         </div>
-        <div className="category-grid">
-          {categories.map(({ name, icon: Icon }) => (
-            <Link
-              key={name}
-              className="category-card"
-              to={`/buy/search?category=${encodeURIComponent(name)}`}
-            >
-              <span className="category-icon">
-                <Icon size={22} aria-hidden="true" />
-              </span>
-              <span>{name}</span>
-              <ArrowRight size={15} className="category-arrow" aria-hidden="true" />
-            </Link>
-          ))}
-        </div>
+        <CategoryCards categories={featuredCategories} />
       </section>
 
       <section className="category-section" aria-labelledby="just-listed-title">
@@ -132,10 +141,23 @@ export function BuyHomePage() {
   );
 }
 
+export function BuyCategoriesPage() {
+  return (
+    <div className="storefront-page">
+      <PageHeading kicker="BROWSE THE MARKETPLACE" title="All categories" />
+      <p className="mb-5 text-sm text-slate-600">
+        Explore every category of items listed by students on campus.
+      </p>
+      <CategoryCards categories={LISTING_CATEGORIES} />
+    </div>
+  );
+}
+
 export function BuySearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get('q') ?? '';
-  const category = searchParams.get('category') ?? '';
+  const categoryValue = searchParams.get('category');
+  const category = Object.values(ListingCategory).find((value) => value === categoryValue);
   const minPrice = searchParams.get('minPrice') ?? '';
   const maxPrice = searchParams.get('maxPrice') ?? '';
   const conditionValue = searchParams.get('condition');
@@ -279,7 +301,14 @@ export function BuySearchPage() {
     <div className="storefront-page">
       <PageHeading
         kicker="DISCOVER ON CAMPUS"
-        title={query ? `Results for “${query}”` : category || 'Find your next good find'}
+        title={
+          query
+            ? `Results for “${query}”`
+            : category
+              ? (LISTING_CATEGORIES.find((item) => item.value === category)?.label ??
+                'Find your next good find')
+              : 'Find your next good find'
+        }
       />
       <div className="filter-chips" aria-label="Search filters">
         <button
@@ -500,6 +529,11 @@ export function BuySearchPage() {
       {conditionValue && !condition && (
         <p className="filter-error" role="alert">
           An unsupported condition filter in this link was ignored.
+        </p>
+      )}
+      {categoryValue && !category && (
+        <p className="filter-error" role="alert">
+          An unsupported category filter in this link was ignored.
         </p>
       )}
       <ItemGrid

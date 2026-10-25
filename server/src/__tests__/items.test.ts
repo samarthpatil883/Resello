@@ -2,11 +2,13 @@ import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import request from 'supertest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import { ListingCategory } from '@resello/shared';
 import { app } from '../app';
 import { env } from '../config/env';
 import { Item } from '../models/Item';
 import { Order } from '../models/Order';
 import { User } from '../models/User';
+import { WishlistItem } from '../models/WishlistItem';
 
 let mongo: MongoMemoryServer;
 
@@ -50,7 +52,7 @@ const pngImage = Buffer.from([
 function publishItem(
   cookie: string,
   images: Buffer[] = [pngImage],
-  fields: { title?: string; price?: number; condition?: string } = {},
+  fields: { title?: string; price?: number; condition?: string; category?: ListingCategory } = {},
 ) {
   const upload = request(app)
     .post('/api/items')
@@ -58,21 +60,28 @@ function publishItem(
     .field('title', fields.title ?? 'Engineering Mathematics')
     .field('description', 'Used textbook in good condition')
     .field('price', String(fields.price ?? 250))
-    .field('condition', fields.condition ?? 'GOOD');
+    .field('condition', fields.condition ?? 'GOOD')
+    .field('category', fields.category ?? ListingCategory.BOOKS);
   images.forEach((image, index) => {
     upload.attach('images', image, { filename: `item-${index + 1}.png`, contentType: 'image/png' });
   });
   return upload;
 }
 
-function editItem(cookie: string, itemId: string, images: Buffer[] = []) {
+function editItem(
+  cookie: string,
+  itemId: string,
+  images: Buffer[] = [],
+  category = ListingCategory.BOOKS,
+) {
   const update = request(app)
     .patch(`/api/items/${itemId}`)
     .set('Cookie', cookie)
     .field('title', 'Updated Mathematics Textbook')
     .field('description', 'Updated condition and details')
     .field('price', '275')
-    .field('condition', 'LIKE_NEW');
+    .field('condition', 'LIKE_NEW')
+    .field('category', category);
   images.forEach((image, index) => {
     update.attach('images', image, {
       filename: `extra-${index + 1}.png`,
@@ -80,6 +89,17 @@ function editItem(cookie: string, itemId: string, images: Buffer[] = []) {
     });
   });
   return update;
+}
+
+function extractPdfText(pdf: Buffer) {
+  const textRuns = [...pdf.toString('latin1').matchAll(/\[([\s\S]*?)\]\s*TJ/g)];
+  return textRuns
+    .map(([, run]) =>
+      [...run.matchAll(/<([a-f\d]+)>/gi)]
+        .map(([, hex]) => Buffer.from(hex, 'hex').toString('latin1'))
+        .join(''),
+    )
+    .join('\n');
 }
 
 describe('MongoDB-backed items API', () => {
@@ -115,6 +135,7 @@ describe('MongoDB-backed items API', () => {
       title: 'Engineering Mathematics',
       description: 'Used textbook in good condition',
       price: 250,
+      category: ListingCategory.BOOKS,
       image_url: `/items/${response.body.item.id}/image`,
       image_urls: [`/items/${response.body.item.id}/images/0`],
     });
@@ -140,6 +161,7 @@ describe('MongoDB-backed items API', () => {
       price: 150,
       condition: 'NEW',
     });
+
     await publishItem(seller.cookie, [pngImage], {
       title: 'Good condition calculator',
       price: 500,
@@ -184,6 +206,36 @@ describe('MongoDB-backed items API', () => {
       price: 150,
       condition: 'NEW',
     });
+  });
+
+  it('stores seller categories and filters buyer results by the selected category', async () => {
+    const seller = await createSession();
+    const buyer = await createSession();
+    await publishItem(seller.cookie, [pngImage], {
+      title: 'Engineering calculator',
+      category: ListingCategory.ELECTRONICS,
+    });
+    await publishItem(seller.cookie, [pngImage], {
+      title: 'Physics textbook',
+      category: ListingCategory.BOOKS,
+    });
+
+    const electronics = await request(app)
+      .get('/api/items')
+      .query({ category: ListingCategory.ELECTRONICS })
+      .set('Cookie', buyer.cookie);
+    const invalidCategory = await request(app)
+      .get('/api/items')
+      .query({ category: 'UNKNOWN' })
+      .set('Cookie', buyer.cookie);
+
+    expect(electronics.status).toBe(200);
+    expect(electronics.body.items).toHaveLength(1);
+    expect(electronics.body.items[0]).toMatchObject({
+      title: 'Engineering calculator',
+      category: ListingCategory.ELECTRONICS,
+    });
+    expect(invalidCategory.status).toBe(400);
   });
 
   it('returns nearest listings with approximate distances and applies a radius', async () => {
@@ -404,9 +456,74 @@ describe('MongoDB-backed items API', () => {
         `/items/${listing.body.item.id}/images/1`,
       ],
     });
+
     const newImage = await request(app).get(`/api${updated.body.item.image_urls[1]}`);
     expect(newImage.status).toBe(200);
     expect(Buffer.from(newImage.body).equals(secondImage)).toBe(true);
+  });
+
+  it('lets sellers change the category of an active listing', async () => {
+    const seller = await createSession();
+    const listing = await publishItem(seller.cookie);
+
+    const response = await editItem(
+      seller.cookie,
+      listing.body.item.id,
+      [],
+      ListingCategory.OTHER_FINDS,
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.body.item.category).toBe(ListingCategory.OTHER_FINDS);
+    expect((await Item.findById(listing.body.item.id).lean())?.category).toBe(
+      ListingCategory.OTHER_FINDS,
+    );
+  });
+
+  it('lets a seller remove an active listing from the marketplace', async () => {
+    const seller = await createSession();
+    const buyer = await createSession();
+    const listing = await publishItem(seller.cookie);
+    const itemId = listing.body.item.id as string;
+
+    const removal = await request(app).delete(`/api/items/${itemId}`).set('Cookie', seller.cookie);
+    const buyerFeed = await request(app).get('/api/items').set('Cookie', buyer.cookie);
+    const sellerListings = await request(app).get('/api/items/mine').set('Cookie', seller.cookie);
+    const listingDetails = await request(app)
+      .get(`/api/items/${itemId}`)
+      .set('Cookie', buyer.cookie);
+
+    expect(removal.status).toBe(200);
+    expect(removal.body.item).toMatchObject({ id: itemId, status: 'REMOVED' });
+    expect(buyerFeed.body.items).toEqual([]);
+    expect(listingDetails.status).toBe(404);
+    expect(sellerListings.body.items[0]).toMatchObject({ id: itemId, status: 'REMOVED' });
+  });
+
+  it('prevents sellers from removing another seller listing or a reserved listing', async () => {
+    const seller = await createSession();
+    const otherSeller = await createSession();
+    const listing = await publishItem(seller.cookie);
+    const itemId = listing.body.item.id as string;
+
+    const notOwnerRemoval = await request(app)
+      .delete(`/api/items/${itemId}`)
+      .set('Cookie', otherSeller.cookie);
+    const reservation = await Item.findOneAndUpdate(
+      { _id: itemId, status: 'ACTIVE' },
+      { $set: { status: 'PENDING', reservedFor: new mongoose.Types.ObjectId() } },
+      { new: true },
+    );
+    expect(reservation).not.toBeNull();
+    const reservedRemoval = await request(app)
+      .delete(`/api/items/${itemId}`)
+      .set('Cookie', seller.cookie);
+
+    expect(notOwnerRemoval.status).toBe(404);
+    expect(notOwnerRemoval.body.error.code).toBe('ITEM_NOT_FOUND');
+    expect(reservedRemoval.status).toBe(409);
+    expect(reservedRemoval.body.error.code).toBe('ITEM_NOT_REMOVABLE');
+    expect((await Item.findById(itemId))?.status).toBe('PENDING');
   });
 
   it('prevents a different seller from editing or retrieving another seller listings', async () => {
@@ -488,6 +605,199 @@ describe('MongoDB-backed items API', () => {
       reservedFor: new mongoose.Types.ObjectId(buyer.id),
     });
     expect(await Order.countDocuments({ buyerId: buyer.id })).toBe(1);
+  });
+
+  it('downloads an order invoice only for the buyer on that order', async () => {
+    const seller = await createSession();
+    const buyer = await createSession();
+    const stranger = await createSession();
+    await User.findByIdAndUpdate(seller.id, {
+      phone: '+91 98765 43210',
+      pickupPreference: 'HOSTEL_GATE',
+    });
+    const listing = await publishItem(seller.cookie);
+    const checkout = await request(app)
+      .post('/api/checkout')
+      .set('Cookie', buyer.cookie)
+      .send({
+        itemIds: [listing.body.item.id],
+        paymentMethod: 'COD',
+        deliveryNotes: 'Meet at IT building, Block A',
+      });
+    const orderId = checkout.body.orders[0].id as string;
+
+    const invoice = await request(app)
+      .get(`/api/orders/${orderId}/invoice`)
+      .set('Cookie', buyer.cookie);
+    const sellerAttempt = await request(app)
+      .get(`/api/orders/${orderId}/invoice`)
+      .set('Cookie', seller.cookie);
+    const strangerAttempt = await request(app)
+      .get(`/api/orders/${orderId}/invoice`)
+      .set('Cookie', stranger.cookie);
+
+    expect(invoice.status).toBe(200);
+    expect(invoice.headers['content-type']).toMatch(/application\/pdf/);
+    expect(invoice.headers['content-disposition']).toContain('.pdf');
+    expect(Buffer.isBuffer(invoice.body)).toBe(true);
+    expect((invoice.body as Buffer).subarray(0, 5).toString()).toBe('%PDF-');
+    const invoiceText = extractPdfText(invoice.body as Buffer);
+    expect(invoiceText).toContain('Samarth Patil');
+    expect(invoiceText).toContain('Engineering Mathematics');
+    expect(invoiceText).toContain('Pending collection');
+    expect(invoiceText).toContain('INVOICE');
+    expect(invoiceText).toContain('localhost:5173');
+    expect(invoiceText).toContain('+91 98765 43210');
+    expect(invoiceText).toContain('Hostel gate');
+    expect(invoiceText).toContain('Meet at IT building, Block A');
+    expect(invoiceText).toContain('sold as-is between peers');
+    expect(invoiceText).toContain('not a GST or other tax invoice');
+    expect(invoiceText).toContain('250.00');
+    const pdfText = (invoice.body as Buffer).toString('latin1');
+    expect(pdfText).toMatch(/<20b9>/i);
+    expect(pdfText).toContain('/FontFile2');
+    expect(pdfText).toContain('/ToUnicode');
+    expect(sellerAttempt.status).toBe(403);
+    expect(strangerAttempt.status).toBe(403);
+  });
+
+  it('removes a purchased listing from every user wishlist after checkout succeeds', async () => {
+    const seller = await createSession();
+    const buyer = await createSession();
+    const otherUser = await createSession();
+    const listing = await publishItem(seller.cookie);
+    const itemId = listing.body.item.id as string;
+
+    for (const session of [buyer, otherUser]) {
+      const saved = await request(app)
+        .post('/api/wishlist')
+        .set('Cookie', session.cookie)
+        .send({ listingId: itemId });
+      expect(saved.status).toBe(201);
+    }
+    expect(await WishlistItem.countDocuments({ itemId })).toBe(2);
+
+    const checkout = await request(app)
+      .post('/api/checkout')
+      .set('Cookie', buyer.cookie)
+      .send({ itemIds: [itemId], paymentMethod: 'COD' });
+
+    expect(checkout.status).toBe(201);
+    expect(await WishlistItem.countDocuments({ itemId })).toBe(0);
+    for (const session of [buyer, otherUser]) {
+      const wishlist = await request(app).get('/api/wishlist').set('Cookie', session.cookie);
+      expect(wishlist.status).toBe(200);
+      expect(wishlist.body.items).toEqual([]);
+    }
+  });
+
+  it('keeps wishlist entries when a multi-item checkout fails and isolates wishlist ownership', async () => {
+    const seller = await createSession();
+    const buyer = await createSession();
+    const otherUser = await createSession();
+    const listing = await publishItem(seller.cookie);
+    const itemId = listing.body.item.id as string;
+    const saved = await request(app)
+      .post('/api/wishlist')
+      .set('Cookie', buyer.cookie)
+      .send({ listingId: itemId });
+    expect(saved.status).toBe(201);
+
+    const otherUserWishlist = await request(app)
+      .get('/api/wishlist')
+      .set('Cookie', otherUser.cookie);
+    expect(otherUserWishlist.body.items).toEqual([]);
+    const foreignRemoval = await request(app)
+      .delete(`/api/wishlist/${itemId}`)
+      .set('Cookie', otherUser.cookie);
+    expect(foreignRemoval.status).toBe(200);
+
+    const failedCheckout = await request(app)
+      .post('/api/checkout')
+      .set('Cookie', buyer.cookie)
+      .send({ itemIds: [itemId, 'invalid-id'], paymentMethod: 'COD' });
+    expect(failedCheckout.status).toBe(400);
+    expect((await Item.findById(itemId))?.status).toBe('ACTIVE');
+
+    const buyerWishlist = await request(app).get('/api/wishlist').set('Cookie', buyer.cookie);
+    expect(buyerWishlist.status).toBe(200);
+    expect(buyerWishlist.body.items.map((item: { id: string }) => item.id)).toEqual([itemId]);
+    expect(await WishlistItem.countDocuments({ itemId, userId: buyer.id })).toBe(1);
+  });
+
+  it('lets the buyer cancel a placed order and makes its listing available to another buyer', async () => {
+    const seller = await createSession();
+    const buyer = await createSession();
+    const nextBuyer = await createSession();
+    const listing = await publishItem(seller.cookie);
+    const itemId = listing.body.item.id as string;
+    const checkout = await request(app)
+      .post('/api/checkout')
+      .set('Cookie', buyer.cookie)
+      .send({ itemIds: [itemId], paymentMethod: 'COD' });
+    const orderId = checkout.body.orders[0].id as string;
+
+    const cancellation = await request(app)
+      .post(`/api/orders/${orderId}/cancel`)
+      .set('Cookie', buyer.cookie);
+
+    expect(cancellation.status).toBe(200);
+    expect(cancellation.body).toEqual({
+      orderId,
+      status: 'CANCELLED',
+      listingStatus: 'ACTIVE',
+    });
+    expect((await Order.findById(orderId))?.status).toBe('CANCELLED');
+    expect(await Item.findById(itemId).lean()).toMatchObject({
+      status: 'ACTIVE',
+      reservedFor: null,
+    });
+
+    const nextCheckout = await request(app)
+      .post('/api/checkout')
+      .set('Cookie', nextBuyer.cookie)
+      .send({ itemIds: [itemId], paymentMethod: 'COD' });
+    expect(nextCheckout.status).toBe(201);
+    expect(nextCheckout.body.orders[0]).toMatchObject({
+      itemId,
+      status: 'PLACED',
+    });
+    expect(await Order.countDocuments({ itemId })).toBe(2);
+  });
+
+  it('allows only the buyer to cancel and rejects cancellation after completion approval', async () => {
+    const seller = await createSession();
+    const buyer = await createSession();
+    const stranger = await createSession();
+    const listing = await publishItem(seller.cookie);
+    const checkout = await request(app)
+      .post('/api/checkout')
+      .set('Cookie', buyer.cookie)
+      .send({ itemIds: [listing.body.item.id], paymentMethod: 'COD' });
+    const orderId = checkout.body.orders[0].id as string;
+
+    const sellerCancellation = await request(app)
+      .post(`/api/orders/${orderId}/cancel`)
+      .set('Cookie', seller.cookie);
+    const strangerCancellation = await request(app)
+      .post(`/api/orders/${orderId}/cancel`)
+      .set('Cookie', stranger.cookie);
+
+    expect(sellerCancellation.status).toBe(403);
+    expect(sellerCancellation.body.error.code).toBe('ORDER_FORBIDDEN');
+    expect(strangerCancellation.status).toBe(403);
+
+    const approval = await request(app)
+      .post(`/api/orders/${orderId}/completion-approval`)
+      .set('Cookie', buyer.cookie);
+    expect(approval.status).toBe(200);
+    const afterApproval = await request(app)
+      .post(`/api/orders/${orderId}/cancel`)
+      .set('Cookie', buyer.cookie);
+    expect(afterApproval.status).toBe(409);
+    expect(afterApproval.body.error.code).toBe('ORDER_NOT_CANCELLABLE');
+    expect((await Order.findById(orderId))?.status).toBe('PLACED');
+    expect((await Item.findById(listing.body.item.id))?.status).toBe('PENDING');
   });
 
   it('allows only one buyer to reserve an item at checkout', async () => {

@@ -1,6 +1,7 @@
 import {
   ListingStatus,
   ConditionType,
+  ListingCategory,
   OrderStatus,
   PaymentMethod,
   PaymentStatus,
@@ -50,7 +51,7 @@ export interface Listing {
   _id: string;
   seller: string | User;
   title: string;
-  category: string | Category;
+  category: ListingCategory | string | Category;
   condition: ConditionType;
   price: number;
   description: string;

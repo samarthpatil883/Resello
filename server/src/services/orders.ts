@@ -33,7 +33,7 @@ export async function getOrdersForUser(userId: string, side: OrderSide) {
   return orders.map((order) => ({
     id: order._id.toString(),
     itemId: order.itemId.toString(),
-    title: titlesByItemId.get(order.itemId.toString()) ?? 'Unavailable item',
+    title: order.itemTitle ?? titlesByItemId.get(order.itemId.toString()) ?? 'Unavailable item',
     price: Number(order.price),
     status: order.status,
     createdAt: order.createdAt.toISOString(),
@@ -109,6 +109,66 @@ export async function approveOrderCompletion(userId: string, orderId: string) {
       buyer: Boolean(result.buyerCompletedAt),
       seller: Boolean(result.sellerCompletedAt),
     },
+  };
+}
+
+export async function cancelBuyerOrder(userId: string, orderId: string) {
+  if (!Types.ObjectId.isValid(orderId)) {
+    throw new HttpError(400, 'INVALID_ORDER_ID', 'The order ID is invalid.');
+  }
+  const buyerObjectId = new Types.ObjectId(userId);
+  const order = await Order.findOneAndUpdate(
+    {
+      _id: orderId,
+      buyerId: buyerObjectId,
+      status: 'PLACED',
+      buyerCompletedAt: null,
+      sellerCompletedAt: null,
+    },
+    { $set: { status: 'CANCELLED' } },
+    { new: true },
+  );
+
+  if (!order) {
+    const existingOrder = await Order.findById(orderId);
+    if (!existingOrder) {
+      throw new HttpError(404, 'ORDER_NOT_FOUND', 'This order could not be found.');
+    }
+    if (!existingOrder.buyerId.equals(buyerObjectId)) {
+      throw new HttpError(403, 'ORDER_FORBIDDEN', 'Only the buyer on this order can cancel it.');
+    }
+    throw new HttpError(
+      409,
+      'ORDER_NOT_CANCELLABLE',
+      'Only a newly placed order can be cancelled before either participant approves completion.',
+    );
+  }
+
+  const releasedListing = await Item.updateOne(
+    { _id: order.itemId, status: 'PENDING', reservedFor: buyerObjectId },
+    { $set: { status: 'ACTIVE', reservedFor: null } },
+  );
+  if (releasedListing.modifiedCount !== 1) {
+    await Order.updateOne(
+      {
+        _id: order._id,
+        status: 'CANCELLED',
+        buyerCompletedAt: null,
+        sellerCompletedAt: null,
+      },
+      { $set: { status: 'PLACED' } },
+    );
+    throw new HttpError(
+      409,
+      'LISTING_RELEASE_FAILED',
+      'The reserved listing could not be made available. Please try again or contact support.',
+    );
+  }
+
+  return {
+    orderId: order._id.toString(),
+    status: order.status,
+    listingStatus: 'ACTIVE' as const,
   };
 }
 
