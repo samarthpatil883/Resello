@@ -205,6 +205,14 @@ export interface SellerReviewsResponse {
   ratingDistribution: Record<number, number>;
 }
 
+export interface NotificationsResponse {
+  notifications: Notification[];
+  unreadCount: number;
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
 // ─── Wishlist ────────────────────────────────────────────────────────────────
 
 export interface AddToWishlistRequest {

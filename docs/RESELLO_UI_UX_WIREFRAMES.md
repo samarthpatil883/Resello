@@ -33,6 +33,8 @@ SELL MODE (indigo header tint)
 - `(3)` on the inactive segment = orders waiting for seller confirmation (shown on `Sell` while in Buy).
   `(1)` on `Buy` while in Sell = unread order updates. Cap the display at `9+`.
 - The location chip and bell are shared. Only the switcher, tint, search placeholder, content and bottom nav change.
+- The bell shows the unread notification count; notifications cover purchases, sales, order changes, new
+  ratings, moderation, and newly listed items.
 
 ### 1.2 Transition timeline (total under 300 ms)
 
@@ -161,8 +163,8 @@ Auto-advance between boxes, support paste of all six digits, `inputmode="numeric
 
 Own listings never appear here. Skeleton cards while loading. Empty state (no listings nearby): "Nothing listed near you yet — be the first to sell" + button to Sell.
 
-The home category section shows only four featured categories: Books & study materials, Calculators,
-Electronics & accessories, and Lab equipment. Its **See all** link opens `/buy/categories`, which lists every
+The home category section shows only four featured categories: Books & study materials, Electronics & accessories,
+Lab & drafting supplies, and Stationery. Its **See all** link opens `/buy/categories`, which lists every
 category; choosing any category opens its filtered marketplace results.
 
 Search uses a compact, wrapping filter strip:
@@ -354,12 +356,9 @@ Empty state (no listings yet): illustration + "Post your first item in under a m
 | Title                              |
 | [ Engineering Maths III        ]   |
 | Category   [ Choose a category v ] |
-| Books & study materials · Calculators · Electronics & accessories |
-| Lab equipment · Lab & drafting supplies · Engineering tools & kits |
-| Stationery · Bags & backpacks · Hostel essentials · Furniture |
-| Sports & fitness · Cycles & transport · Clothing & accessories |
-| Art & hobby supplies · Other finds |
-| Choose one: Books, Electronics, Lab & drafting, or Other finds. |
+| Books & study materials · Electronics & accessories |
+| Lab & drafting supplies · Stationery · Furniture · Art & hobby supplies |
+| Other finds |
 | Condition  (o) Like new ( ) Good   |
 |            ( ) Fair     ( ) Poor   |
 | Price      [ ₹ 250 ]  Similar ~₹280|

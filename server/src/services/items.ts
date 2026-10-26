@@ -1,14 +1,29 @@
 import { Types } from 'mongoose';
-import { ConditionType, ListingCategory } from '@resello/shared';
+import { ConditionType, ListingCategory, NotificationType } from '@resello/shared';
 import { Item, type ItemImageContentType } from '../models/Item';
 import { Order } from '../models/Order';
 import { WishlistItem } from '../models/WishlistItem';
 import { HttpError } from '../middleware/errors';
 import { getSellerRatingSummary } from './orders';
+import {
+  notifyNewListing,
+  notifyOrderPlaced,
+  removeNotificationsForRelatedIds,
+} from './notifications';
 
 export const MAX_ITEM_IMAGE_BYTES = 5 * 1024 * 1024;
 export const MAX_ITEM_IMAGES = 5;
 export const MAX_ITEM_IMAGES_TOTAL_BYTES = 15 * 1024 * 1024;
+const retiredListingCategories = [
+  'CALCULATORS',
+  'LAB_EQUIPMENT',
+  'ENGINEERING_TOOLS',
+  'HOSTEL_ESSENTIALS',
+  'BAGS_BACKPACKS',
+  'CLOTHING_ACCESSORIES',
+  'CYCLES_TRANSPORT',
+  'SPORTS_FITNESS',
+];
 
 export interface ItemRecord {
   id: string;
@@ -99,7 +114,13 @@ export function toItemRecord(
     image_url: `/items/${item._id.toString()}/image`,
     image_urls,
     ...(item.condition ? { condition: item.condition } : {}),
-    ...(item.category ? { category: item.category } : {}),
+    ...(item.category
+      ? {
+          category: retiredListingCategories.includes(item.category)
+            ? ListingCategory.OTHER_FINDS
+            : item.category,
+        }
+      : {}),
     ...(distanceKm !== undefined ? { distance_km: distanceKm } : {}),
     status: item.status,
     created_at: item.createdAt.toISOString(),
@@ -118,6 +139,13 @@ export async function createItem(item: NewItem): Promise<ItemRecord> {
     images: item.images,
     imageCount: item.images.length,
   });
+  try {
+    await notifyNewListing(created);
+  } catch (error) {
+    await removeNotificationsForRelatedIds([created._id], [NotificationType.NEW_LISTING]);
+    await Item.deleteOne({ _id: created._id });
+    throw error;
+  }
   return toItemRecord(created);
 }
 
@@ -136,6 +164,12 @@ export async function checkoutItems(buyerId: string, itemIds: string[], delivery
     price: number;
   }> = [];
   const createdOrderIds: Types.ObjectId[] = [];
+  const createdOrders: Array<{
+    _id: Types.ObjectId;
+    buyerId: Types.ObjectId;
+    sellerId: Types.ObjectId;
+    itemTitle?: string;
+  }> = [];
 
   try {
     for (const itemId of itemIds) {
@@ -176,6 +210,7 @@ export async function checkoutItems(buyerId: string, itemIds: string[], delivery
         deliveryNotes,
       });
       createdOrderIds.push(order._id);
+      createdOrders.push(order);
       orders.push({
         id: order._id.toString(),
         itemId: item._id.toString(),
@@ -186,9 +221,11 @@ export async function checkoutItems(buyerId: string, itemIds: string[], delivery
         paymentStatus: order.paymentStatus,
       });
     }
+    await notifyOrderPlaced(createdOrders);
     await WishlistItem.deleteMany({ itemId: { $in: reservedItems.map((item) => item._id) } });
     return orders;
   } catch (error) {
+    await removeNotificationsForRelatedIds(createdOrderIds, [NotificationType.ORDER_PLACED]);
     if (createdOrderIds.length > 0) await Order.deleteMany({ _id: { $in: createdOrderIds } });
     if (reservedItems.length > 0) {
       await Item.updateMany(
@@ -229,7 +266,12 @@ export async function getActiveItemsForBuyer(
     };
   }
   if (filters.condition) match.condition = filters.condition;
-  if (filters.category) match.category = filters.category;
+  if (filters.category) {
+    match.category =
+      filters.category === ListingCategory.OTHER_FINDS
+        ? { $in: [ListingCategory.OTHER_FINDS, ...retiredListingCategories] }
+        : filters.category;
+  }
   if (filters.newOnly) {
     match.createdAt = { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) };
   }

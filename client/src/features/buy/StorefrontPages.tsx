@@ -15,7 +15,14 @@ import {
 import { useEffect, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ConditionType, LISTING_CATEGORIES, ListingCategory, Mode } from '@resello/shared';
+import {
+  ConditionType,
+  LISTING_CATEGORIES,
+  ListingCategory,
+  Mode,
+  NotificationType,
+  type Notification,
+} from '@resello/shared';
 import { api, getApiErrorMessage } from '../../lib/api';
 import { CreateListingForm } from '../sell/CreateListingForm';
 import { EditListingForm } from '../sell/EditListingForm';
@@ -744,45 +751,206 @@ export function SharedProfilePage({
 }
 
 export function NotificationsPage() {
-  return (
-    <EmptyAccountPage
-      kicker="UPDATES"
-      title="You’re all caught up."
-      message="Order and marketplace updates will appear here."
-      action="Back to home"
-      to="/buy"
-    />
-  );
-}
+  const navigate = useNavigate();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
-function EmptyAccountPage({
-  kicker,
-  title,
-  message,
-  action,
-  to,
-  mode = Mode.BUY,
-}: {
-  kicker: string;
-  title: string;
-  message: string;
-  action: string;
-  to: string;
-  mode?: Mode;
-}) {
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError(null);
+    api
+      .get<{
+        notifications: Notification[];
+        unreadCount: number;
+        totalPages: number;
+      }>('/notifications', { params: { page: 1, limit: 30 } })
+      .then(({ data }) => {
+        if (!active) return;
+        setNotifications(data.notifications);
+        setUnreadCount(data.unreadCount);
+        setPage(1);
+        setTotalPages(data.totalPages);
+      })
+      .catch((requestError: unknown) => {
+        if (active) setError(getApiErrorMessage(requestError));
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [reloadKey]);
+
+  async function openNotification(notification: Notification) {
+    setBusy(true);
+    setError(null);
+    try {
+      if (!notification.readAt) {
+        await api.patch(`/notifications/${notification.id}/read`);
+        const readAt = new Date().toISOString();
+        setNotifications((current) =>
+          current.map((item) => (item.id === notification.id ? { ...item, readAt } : item)),
+        );
+        setUnreadCount((count) => Math.max(count - 1, 0));
+        window.dispatchEvent(new Event('resello:notifications-changed'));
+      }
+      if (notification.type === NotificationType.NEW_LISTING && notification.relatedId) {
+        navigate(`/buy/listing/${notification.relatedId}`);
+      } else if (notification.type === NotificationType.LISTING_REMOVED && notification.relatedId) {
+        navigate('/sell/listings');
+      } else if (notification.type === NotificationType.NEW_REVIEW) {
+        navigate('/sell/reviews');
+      } else {
+        navigate(notification.mode === Mode.BUY ? '/buy/orders' : '/sell/orders');
+      }
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function markAllAsRead() {
+    setBusy(true);
+    setError(null);
+    try {
+      await api.patch('/notifications/read-all');
+      const readAt = new Date().toISOString();
+      setNotifications((current) => current.map((item) => ({ ...item, readAt })));
+      setUnreadCount(0);
+      window.dispatchEvent(new Event('resello:notifications-changed'));
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function loadMore() {
+    const nextPage = page + 1;
+    setBusy(true);
+    setError(null);
+    try {
+      const { data } = await api.get<{
+        notifications: Notification[];
+        unreadCount: number;
+        totalPages: number;
+      }>('/notifications', { params: { page: nextPage, limit: 30 } });
+      setNotifications((current) => [...current, ...data.notifications]);
+      setUnreadCount(data.unreadCount);
+      setPage(nextPage);
+      setTotalPages(data.totalPages);
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
-    <div className={`storefront-page storefront-page-${mode.toLowerCase()}`}>
-      <PageHeading kicker={kicker} title={title} />
-      <div className="search-empty">
-        <PackageOpen size={25} />
-        <p>{message}</p>
-        <Link
-          className={`button ${mode === Mode.SELL ? 'button-sell' : 'button-secondary'}`}
-          to={to}
+    <div className="storefront-page">
+      <PageHeading kicker="UPDATES" title="Notifications">
+        <p className="text-sm text-slate-600">
+          Purchase, sale, listing, review, and marketplace updates for your account.
+        </p>
+      </PageHeading>
+      {unreadCount > 0 && (
+        <button
+          type="button"
+          className="button button-secondary mb-4"
+          onClick={() => void markAllAsRead()}
+          disabled={busy}
         >
-          {action}
-        </Link>
-      </div>
+          Mark all as read ({unreadCount})
+        </button>
+      )}
+      {error && (
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <p role="alert">{error}</p>
+          <button
+            type="button"
+            className="mt-2 font-semibold underline"
+            onClick={() => setReloadKey((key) => key + 1)}
+          >
+            Retry
+          </button>
+        </div>
+      )}
+      {loading ? (
+        <p className="rounded-xl bg-white p-5 text-sm text-slate-600" role="status">
+          Loading notifications…
+        </p>
+      ) : notifications.length === 0 ? (
+        <div className="search-empty">
+          <PackageOpen size={25} />
+          <h2>You’re all caught up.</h2>
+          <p>Order and marketplace updates will appear here.</p>
+          <Link className="button button-secondary" to="/buy">
+            Back to home
+          </Link>
+        </div>
+      ) : (
+        <div className="grid gap-3" aria-label="Your notifications">
+          {notifications.map((notification) => (
+            <button
+              key={notification.id}
+              type="button"
+              className={`w-full rounded-2xl border p-4 text-left transition hover:border-teal-300 hover:shadow-sm ${
+                notification.readAt ? 'border-slate-200 bg-white' : 'border-teal-200 bg-teal-50/70'
+              }`}
+              onClick={() => void openNotification(notification)}
+              disabled={busy}
+            >
+              <span className="flex items-start justify-between gap-3">
+                <span>
+                  <span className="block font-semibold text-slate-900">{notification.title}</span>
+                  <span className="mt-1 block text-sm text-slate-600">{notification.body}</span>
+                  <span className="mt-2 flex flex-wrap items-center gap-2">
+                    <span
+                      className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                        notification.mode === Mode.BUY
+                          ? 'bg-teal-100 text-teal-800'
+                          : 'bg-indigo-100 text-indigo-800'
+                      }`}
+                    >
+                      {notification.mode === Mode.BUY ? 'Buy' : 'Sell'}
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      {new Intl.DateTimeFormat('en-IN', {
+                        dateStyle: 'medium',
+                        timeStyle: 'short',
+                      }).format(new Date(notification.createdAt))}
+                    </span>
+                  </span>
+                </span>
+                {!notification.readAt && (
+                  <span className="shrink-0 rounded-full bg-teal-700 px-2 py-1 text-xs font-semibold text-white">
+                    New
+                  </span>
+                )}
+              </span>
+            </button>
+          ))}
+          {page < totalPages && (
+            <button
+              type="button"
+              className="button button-secondary justify-self-center"
+              onClick={() => void loadMore()}
+              disabled={busy}
+            >
+              Load more
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

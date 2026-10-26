@@ -8,6 +8,7 @@ import { app } from '../app';
 import { env } from '../config/env';
 import { AdminAuditLog } from '../models/AdminAuditLog';
 import { Item } from '../models/Item';
+import { Notification } from '../models/Notification';
 import { Order } from '../models/Order';
 import { Review } from '../models/Review';
 import { User } from '../models/User';
@@ -222,6 +223,16 @@ describe('administrator access and management API', () => {
       .send({ listingId: item._id.toString(), reason: 'Prohibited campus item' });
     expect(removeResponse.status).toBe(200);
     expect((await Item.findById(item._id))?.status).toBe('REMOVED');
+    expect(
+      await Notification.findOne({
+        recipientId: student.id,
+        relatedId: item._id,
+        type: 'LISTING_REMOVED',
+      }).lean(),
+    ).toMatchObject({
+      mode: Mode.SELL,
+      title: 'Listing removed by Resello',
+    });
 
     const auditFeed = await request(app).get('/api/admin/activity').set('Cookie', admin.cookie);
     expect(auditFeed.body.activity).toMatchObject([

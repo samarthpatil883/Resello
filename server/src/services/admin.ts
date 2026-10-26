@@ -6,6 +6,7 @@ import { Item } from '../models/Item';
 import { Order } from '../models/Order';
 import { Review } from '../models/Review';
 import { User } from '../models/User';
+import { notifyAdminListingRemoved } from './notifications';
 
 export interface AdminPagination {
   page: number;
@@ -300,6 +301,7 @@ export async function removeAdminListing(adminId: string, listingId: string, rea
     throw new HttpError(404, 'ACTIVE_LISTING_NOT_FOUND', 'Only an active listing can be removed.');
   }
   await writeAudit(adminId, 'LISTING_REMOVED', 'LISTING', item._id, reason);
+  await notifyAdminListingRemoved(item);
   return { listingId: item._id.toString(), status: item.status };
 }
 

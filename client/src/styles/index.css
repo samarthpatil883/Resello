@@ -793,6 +793,7 @@ textarea:focus-visible {
 }
 
 .icon-button {
+  position: relative;
   display: grid;
   width: 42px;
   height: 42px;

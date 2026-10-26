@@ -127,8 +127,7 @@ export interface WishlistItem {
 }
 
 export interface Notification {
-  _id: string;
-  user: string;
+  id: string;
   type: NotificationType;
   title: string;
   body: string;

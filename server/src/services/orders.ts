@@ -1,8 +1,15 @@
+import { NotificationType } from '@resello/shared';
 import { Types } from 'mongoose';
 import { HttpError } from '../middleware/errors';
 import { Item } from '../models/Item';
 import { Order } from '../models/Order';
 import { Review } from '../models/Review';
+import {
+  notifyOrderCancelled,
+  notifyOrderCompleted,
+  notifySellerReview,
+  removeNotificationsForRelatedIds,
+} from './notifications';
 
 export type OrderSide = 'buyer' | 'seller';
 
@@ -62,6 +69,7 @@ export async function approveOrderCompletion(userId: string, orderId: string) {
     throw new HttpError(409, 'ORDER_NOT_COMPLETABLE', 'A cancelled order cannot be completed.');
   }
   if (order.status === 'COMPLETED') {
+    await notifyOrderCompleted(order);
     return {
       orderId: order._id.toString(),
       status: order.status,
@@ -97,6 +105,7 @@ export async function approveOrderCompletion(userId: string, orderId: string) {
         { _id: completed.itemId, status: 'PENDING', reservedFor: completed.buyerId },
         { $set: { status: 'SOLD', reservedFor: null } },
       );
+      await notifyOrderCompleted(completed);
     }
   }
 
@@ -165,6 +174,18 @@ export async function cancelBuyerOrder(userId: string, orderId: string) {
     );
   }
 
+  try {
+    await notifyOrderCancelled(order);
+  } catch (error) {
+    await removeNotificationsForRelatedIds([order._id], [NotificationType.ORDER_CANCELLED]);
+    await Item.updateOne(
+      { _id: order.itemId, status: 'ACTIVE', reservedFor: null },
+      { $set: { status: 'PENDING', reservedFor: buyerObjectId } },
+    );
+    await Order.updateOne({ _id: order._id, status: 'CANCELLED' }, { $set: { status: 'PLACED' } });
+    throw error;
+  }
+
   return {
     orderId: order._id.toString(),
     status: order.status,
@@ -208,6 +229,11 @@ export async function createSellerRating(
       sellerId: order.sellerId,
       rating,
       comment,
+    });
+    await notifySellerReview({
+      sellerId: review.sellerId,
+      rating: review.rating,
+      orderId: review.orderId,
     });
     return {
       id: review._id.toString(),

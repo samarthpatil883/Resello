@@ -202,8 +202,8 @@ dense card grids, sticky bars, instant feedback, skeleton loaders. Nothing decor
 
 ### 5.1 Home (`/buy`)
 
-Location chip · search bar with suggestions · four featured category cards (Books & study materials, Calculators,
-Electronics & accessories, Lab equipment) with a **See all** link to `/buy/categories` for every category ·
+Location chip · search bar with suggestions · four featured category cards (Books & study materials, Electronics &
+accessories, Lab & drafting supplies, Stationery) with a **See all** link to `/buy/categories` for every category ·
 **Near you** strip (distance chips, e.g. "0.4 km") · **Just listed** grid (2 columns mobile, 3–4 desktop, infinite
 scroll) · sell-nudge card · floating cart bar when the cart is not empty.
 Listing card: image, title (2 lines), price, condition badge, seller first name + rating, distance.
@@ -279,10 +279,9 @@ shows the reason.
 Goal: a returning seller posts in under a minute.
 Photos first (camera or gallery, up to 5, first is the cover) with per-image upload progress →
 title → category → condition → price → description → location (default from onboarding) → **Post**.
-The seller must select one project-relevant category: Books & study materials, Calculators, Electronics &
-accessories, Lab equipment, Lab & drafting supplies, Engineering tools & kits, Stationery, Bags & backpacks,
-Hostel essentials, Furniture, Sports & fitness, Cycles & transport, Clothing & accessories, Art & hobby
-supplies, or Other finds. The chosen category is saved on the listing and powers the matching Buy home tile
+The seller must select one project-relevant category: Books & study materials, Electronics & accessories,
+Lab & drafting supplies, Stationery, Furniture, Art & hobby supplies, or Other finds. The chosen category is saved
+on the listing and powers the matching Buy home tile
 and buyer category filter; it is not inferred from the title or description.
 Images upload straight to Cloudinary using **server-signed** parameters. A failed upload shows an error with
 **Retry** or **Cancel** and the listing is not published until images succeed (Create Listing activity diagram).
@@ -304,7 +303,11 @@ Average rating, star distribution, list of reviews. Read-only.
 ## 7. Shared screens
 
 - **Messages:** one thread per (pair of users, listing), reachable from both modes. Unread badge. Optional typing indicator.
-- **Notifications:** bell in the header in both modes. Each item is tagged Buy or Sell and switches mode on tap.
+- **Notifications:** authenticated, persistent inbox available from the shared header bell in both modes.
+  Notify both buyer and seller when an order is placed, cancelled, or completed; notify sellers about new
+  ratings and admin listing removal; notify other verified students when a new item is listed. Each item is
+  tagged Buy or Sell, unread items are counted in the header, and opening an item marks it read and routes to
+  the relevant order, listing, or seller page.
 - **Profile and settings:** name, verified college email with a "Verified" badge, campus location, seller rating,
   change password, notification preferences, logout.
 
@@ -371,7 +374,8 @@ Enums: `ListingStatus` ACTIVE / SOLD / REMOVED / PENDING · `ConditionType` NEW 
 `GET /api/seller/reviews`
 
 **Shared and admin**
-`GET/POST /api/messages` · `PUT /api/messages/:id/read` · `GET /api/notifications`
+`GET/POST /api/messages` · `PUT /api/messages/:id/read` · `GET /api/notifications` ·
+`PATCH /api/notifications/:notificationId/read` · `PATCH /api/notifications/read-all`
 `GET /api/admin/stats` · `/moderation` · `POST /api/admin/actions/remove-listing` · `/suspend-user` · `GET /api/admin/users` · `/transactions`
 
 Error format: `{ "error": { "code": "EMAIL_DOMAIN_NOT_ALLOWED", "message": "…" } }`. Every `/api/seller/*` route checks

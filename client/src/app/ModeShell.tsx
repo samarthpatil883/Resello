@@ -172,6 +172,7 @@ export function ModeShell({ mode, children }: { mode: Mode; children?: ReactNode
   const location = useLocation();
   const [searchError, setSearchError] = useState<string | null>(null);
   const [wishlistSyncError, setWishlistSyncError] = useState<string | null>(null);
+  const [notificationCount, setNotificationCount] = useState(0);
 
   useEffect(() => {
     if (!user?._id) return;
@@ -192,6 +193,36 @@ export function ModeShell({ mode, children }: { mode: Mode; children?: ReactNode
       active = false;
       window.removeEventListener('focus', sync);
       document.removeEventListener('visibilitychange', syncWhenVisible);
+    };
+  }, [user?._id]);
+
+  useEffect(() => {
+    if (!user?._id) return;
+    let active = true;
+    const syncUnreadNotifications = () => {
+      api
+        .get<{ unreadCount: number }>('/notifications', { params: { page: 1, limit: 1 } })
+        .then(({ data }) => {
+          if (active) setNotificationCount(data.unreadCount);
+        })
+        .catch((error: unknown) => {
+          if (active) console.error('Could not refresh notification count:', error);
+        });
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') syncUnreadNotifications();
+    };
+    syncUnreadNotifications();
+    const interval = window.setInterval(syncUnreadNotifications, 60_000);
+    window.addEventListener('focus', syncUnreadNotifications);
+    window.addEventListener('resello:notifications-changed', syncUnreadNotifications);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      window.removeEventListener('focus', syncUnreadNotifications);
+      window.removeEventListener('resello:notifications-changed', syncUnreadNotifications);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, [user?._id]);
 
@@ -268,8 +299,17 @@ export function ModeShell({ mode, children }: { mode: Mode; children?: ReactNode
           <ModeSwitcher mode={mode} onChange={(nextMode) => void switchMode(nextMode)} />
           <SearchBox key={mode} mode={mode} />
           <div className="header-actions">
-            <Link to="/notifications" className="icon-button" aria-label="Notifications">
+            <Link
+              to="/notifications"
+              className="icon-button"
+              aria-label={`Notifications${notificationCount ? `, ${notificationCount} unread` : ''}`}
+            >
               <Bell size={19} />
+              {notificationCount > 0 && (
+                <span className="wishlist-count" aria-hidden="true">
+                  {notificationCount > 99 ? '99+' : notificationCount}
+                </span>
+              )}
             </Link>
             <Link
               to="/buy/wishlist"

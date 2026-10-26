@@ -7,6 +7,7 @@ import { app } from '../app';
 import { env } from '../config/env';
 import { Item } from '../models/Item';
 import { Order } from '../models/Order';
+import { Notification } from '../models/Notification';
 import { User } from '../models/User';
 import { WishlistItem } from '../models/WishlistItem';
 
@@ -215,6 +216,7 @@ describe('MongoDB-backed items API', () => {
       title: 'Engineering calculator',
       category: ListingCategory.ELECTRONICS,
     });
+
     await publishItem(seller.cookie, [pngImage], {
       title: 'Physics textbook',
       category: ListingCategory.BOOKS,
@@ -236,6 +238,99 @@ describe('MongoDB-backed items API', () => {
       category: ListingCategory.ELECTRONICS,
     });
     expect(invalidCategory.status).toBe(400);
+
+    const legacyListing = new mongoose.Types.ObjectId();
+    await Item.collection.insertOne({
+      _id: legacyListing,
+      sellerId: new mongoose.Types.ObjectId(seller.id),
+      title: 'Legacy hostel essentials listing',
+      description: 'Older listing with retired category',
+      price: 100,
+      category: 'HOSTEL_ESSENTIALS',
+      status: 'ACTIVE',
+      reservedFor: null,
+      images: [],
+      imageCount: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    const otherFinds = await request(app)
+      .get('/api/items')
+      .query({ category: ListingCategory.OTHER_FINDS })
+      .set('Cookie', buyer.cookie);
+    expect(otherFinds.body.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: legacyListing.toString(),
+          category: ListingCategory.OTHER_FINDS,
+        }),
+      ]),
+    );
+  });
+
+  it('delivers owner-scoped purchase and sale notifications with read controls', async () => {
+    const seller = await createSession();
+    const buyer = await createSession();
+    const stranger = await createSession();
+    const listing = await publishItem(seller.cookie);
+    const itemId = listing.body.item.id as string;
+
+    const buyerInbox = await request(app).get('/api/notifications').set('Cookie', buyer.cookie);
+    const sellerInbox = await request(app).get('/api/notifications').set('Cookie', seller.cookie);
+    const strangerInbox = await request(app)
+      .get('/api/notifications')
+      .set('Cookie', stranger.cookie);
+    expect(buyerInbox.body.notifications).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'NEW_LISTING',
+          title: 'New item listed',
+          mode: 'BUY',
+          relatedId: itemId,
+          readAt: null,
+        }),
+      ]),
+    );
+    expect(sellerInbox.body.notifications).toHaveLength(0);
+    expect(strangerInbox.body.notifications).toHaveLength(1);
+
+    const checkout = await request(app)
+      .post('/api/checkout')
+      .set('Cookie', buyer.cookie)
+      .send({ itemIds: [itemId], paymentMethod: 'COD' });
+    const orderId = checkout.body.orders[0].id as string;
+    const buyerOrderNotice = await Notification.findOne({
+      recipientId: buyer.id,
+      relatedId: orderId,
+      type: 'ORDER_PLACED',
+    }).lean();
+    const sellerOrderNotice = await Notification.findOne({
+      recipientId: seller.id,
+      relatedId: orderId,
+      type: 'ORDER_PLACED',
+    }).lean();
+    expect(buyerOrderNotice?.mode).toBe('BUY');
+    expect(sellerOrderNotice?.mode).toBe('SELL');
+
+    const buyerOrderFeed = await request(app).get('/api/notifications').set('Cookie', buyer.cookie);
+    expect(buyerOrderFeed.body.unreadCount).toBe(2);
+    const markRead = await request(app)
+      .patch(`/api/notifications/${buyerOrderNotice?._id.toString()}/read`)
+      .set('Cookie', buyer.cookie);
+    const unauthorizedRead = await request(app)
+      .patch(`/api/notifications/${sellerOrderNotice?._id.toString()}/read`)
+      .set('Cookie', buyer.cookie);
+    expect(markRead.status).toBe(200);
+    expect(markRead.body.notification.readAt).toEqual(expect.any(String));
+    expect(unauthorizedRead.status).toBe(404);
+
+    const markAll = await request(app)
+      .patch('/api/notifications/read-all')
+      .set('Cookie', seller.cookie);
+    expect(markAll.status).toBe(200);
+    expect(markAll.body.updatedCount).toBe(1);
+    const sellerUnread = await request(app).get('/api/notifications').set('Cookie', seller.cookie);
+    expect(sellerUnread.body.unreadCount).toBe(0);
   });
 
   it('returns nearest listings with approximate distances and applies a radius', async () => {
@@ -752,6 +847,13 @@ describe('MongoDB-backed items API', () => {
       status: 'ACTIVE',
       reservedFor: null,
     });
+    expect(
+      await Notification.countDocuments({
+        relatedId: orderId,
+        type: 'ORDER_CANCELLED',
+        recipientId: { $in: [buyer.id, seller.id] },
+      }),
+    ).toBe(2);
 
     const nextCheckout = await request(app)
       .post('/api/checkout')
@@ -876,6 +978,13 @@ describe('MongoDB-backed items API', () => {
     });
     expect((await Order.findById(orderId))?.status).toBe('COMPLETED');
     expect((await Item.findById(itemId))?.status).toBe('SOLD');
+    expect(
+      await Notification.countDocuments({
+        relatedId: orderId,
+        type: 'ORDER_COMPLETED',
+        recipientId: { $in: [buyer.id, seller.id] },
+      }),
+    ).toBe(2);
   });
 
   it('allows only order participants to approve completion', async () => {
@@ -937,6 +1046,13 @@ describe('MongoDB-backed items API', () => {
     expect(duplicateRating.body.error.code).toBe('RATING_ALREADY_SUBMITTED');
     expect(buyerOrders.body.orders[0].rating).toBe(4);
     expect(sellerStats.body).toMatchObject({ averageRating: 4, ratingCount: 1 });
+    expect(
+      await Notification.countDocuments({
+        recipientId: seller.id,
+        relatedId: orderId,
+        type: 'NEW_REVIEW',
+      }),
+    ).toBe(1);
   });
 
   it('rejects seller ratings from anyone other than the buyer', async () => {

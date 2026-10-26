@@ -97,24 +97,7 @@ components:
         price: { type: number, minimum: 0.01 }
         category:
           type: string
-          enum:
-            [
-              BOOKS,
-              CALCULATORS,
-              ELECTRONICS,
-              LAB_EQUIPMENT,
-              LAB_DRAFTING,
-              ENGINEERING_TOOLS,
-              STATIONERY,
-              BAGS_BACKPACKS,
-              HOSTEL_ESSENTIALS,
-              FURNITURE,
-              SPORTS_FITNESS,
-              CYCLES_TRANSPORT,
-              CLOTHING_ACCESSORIES,
-              ART_HOBBY,
-              OTHER_FINDS,
-            ]
+          enum: [BOOKS, ELECTRONICS, LAB_DRAFTING, STATIONERY, FURNITURE, ART_HOBBY, OTHER_FINDS]
         image_url: { type: string, description: API-relative URL for the first item image }
         image_urls:
           type: array
@@ -206,16 +189,30 @@ components:
         addedAt: { type: string }
     Notification:
       type: object
+      required: [id, type, title, body, mode, relatedId, readAt, createdAt]
       properties:
-        _id: { type: string }
-        user: { $ref: '#/components/schemas/User' }
-        type: { type: string }
+        id: { type: string }
+        type:
+          type: string
+          enum:
+            [
+              ORDER_PLACED,
+              ORDER_CONFIRMED,
+              ORDER_COMPLETED,
+              ORDER_CANCELLED,
+              PAYMENT_RECEIVED,
+              NEW_MESSAGE,
+              NEW_REVIEW,
+              LISTING_REMOVED,
+              ACCOUNT_SUSPENDED,
+              NEW_LISTING,
+            ]
         title: { type: string }
         body: { type: string }
         mode: { type: string, enum: [BUY, SELL] }
-        relatedId: { type: string }
-        readAt: { type: string }
-        createdAt: { type: string }
+        relatedId: { type: string, nullable: true }
+        readAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
     AdminUser:
       type: object
       required:
@@ -1081,18 +1078,10 @@ paths:
                     enum:
                       [
                         BOOKS,
-                        CALCULATORS,
                         ELECTRONICS,
-                        LAB_EQUIPMENT,
                         LAB_DRAFTING,
-                        ENGINEERING_TOOLS,
                         STATIONERY,
-                        BAGS_BACKPACKS,
-                        HOSTEL_ESSENTIALS,
                         FURNITURE,
-                        SPORTS_FITNESS,
-                        CYCLES_TRANSPORT,
-                        CLOTHING_ACCESSORIES,
                         ART_HOBBY,
                         OTHER_FINDS,
                       ],
@@ -1730,6 +1719,7 @@ paths:
   /api/notifications:
     get:
       tags: [Notifications]
+      summary: List the authenticated user's notifications
       security:
         - cookieAuth: []
       parameters:
@@ -1742,10 +1732,60 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [notifications, unreadCount, total, page, totalPages]
                 properties:
                   notifications:
                     type: array
                     items: { $ref: '#/components/schemas/Notification' }
+                  unreadCount: { type: integer, minimum: 0 }
+                  total: { type: integer, minimum: 0 }
+                  page: { type: integer, minimum: 1 }
+                  totalPages: { type: integer, minimum: 0 }
+        '401':
+          description: Authentication required
+  /api/notifications/{notificationId}/read:
+    patch:
+      tags: [Notifications]
+      summary: Mark one of the authenticated user's notifications as read
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [notification]
+                properties:
+                  notification: { $ref: '#/components/schemas/Notification' }
+        '404':
+          description: Notification not found for this user
+        '401':
+          description: Authentication required
+  /api/notifications/read-all:
+    patch:
+      tags: [Notifications]
+      summary: Mark all of the authenticated user's notifications as read
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Notifications marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [updatedCount]
+                properties:
+                  updatedCount: { type: integer, minimum: 0 }
+        '401':
+          description: Authentication required
   /api/admin/stats:
     get:
       tags: [Admin]
@@ -2077,23 +2117,7 @@ paths:
             {
               type: string,
               enum:
-                [
-                  BOOKS,
-                  CALCULATORS,
-                  ELECTRONICS,
-                  LAB_EQUIPMENT,
-                  LAB_DRAFTING,
-                  ENGINEERING_TOOLS,
-                  STATIONERY,
-                  BAGS_BACKPACKS,
-                  HOSTEL_ESSENTIALS,
-                  FURNITURE,
-                  SPORTS_FITNESS,
-                  CYCLES_TRANSPORT,
-                  CLOTHING_ACCESSORIES,
-                  ART_HOBBY,
-                  OTHER_FINDS,
-                ],
+                [BOOKS, ELECTRONICS, LAB_DRAFTING, STATIONERY, FURNITURE, ART_HOBBY, OTHER_FINDS],
             }
         - name: newOnly
           in: query
@@ -2158,18 +2182,10 @@ paths:
                     enum:
                       [
                         BOOKS,
-                        CALCULATORS,
                         ELECTRONICS,
-                        LAB_EQUIPMENT,
                         LAB_DRAFTING,
-                        ENGINEERING_TOOLS,
                         STATIONERY,
-                        BAGS_BACKPACKS,
-                        HOSTEL_ESSENTIALS,
                         FURNITURE,
-                        SPORTS_FITNESS,
-                        CYCLES_TRANSPORT,
-                        CLOTHING_ACCESSORIES,
                         ART_HOBBY,
                         OTHER_FINDS,
                       ],

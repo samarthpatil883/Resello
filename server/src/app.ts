@@ -9,6 +9,7 @@ import { itemsRouter } from './routes/items';
 import { ordersRouter } from './routes/orders';
 import { adminRouter } from './routes/admin';
 import { wishlistRouter } from './routes/wishlist';
+import { notificationsRouter } from './routes/notifications';
 import { errorHandler, HttpError } from './middleware/errors';
 
 const app = express();
@@ -33,6 +34,7 @@ app.use('/api', itemsRouter);
 app.use('/api', ordersRouter);
 app.use('/api', adminRouter);
 app.use('/api', wishlistRouter);
+app.use('/api', notificationsRouter);
 app.use((_req, _res, next) =>
   next(new HttpError(404, 'NOT_FOUND', 'The requested resource was not found.')),
 );
