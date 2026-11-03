@@ -702,7 +702,7 @@ describe('MongoDB-backed items API', () => {
     expect(await Order.countDocuments({ buyerId: buyer.id })).toBe(1);
   });
 
-  it('downloads an order invoice only for the buyer on that order', async () => {
+  it('allows only the buyer to download an invoice after order completion', async () => {
     const seller = await createSession();
     const buyer = await createSession();
     const stranger = await createSession();
@@ -720,6 +720,19 @@ describe('MongoDB-backed items API', () => {
         deliveryNotes: 'Meet at IT building, Block A',
       });
     const orderId = checkout.body.orders[0].id as string;
+
+    const pendingInvoice = await request(app)
+      .get(`/api/orders/${orderId}/invoice`)
+      .set('Cookie', buyer.cookie);
+    expect(pendingInvoice.status).toBe(409);
+    expect(pendingInvoice.body.error.code).toBe('ORDER_NOT_COMPLETED');
+
+    await request(app)
+      .post(`/api/orders/${orderId}/completion-approval`)
+      .set('Cookie', buyer.cookie);
+    await request(app)
+      .post(`/api/orders/${orderId}/completion-approval`)
+      .set('Cookie', seller.cookie);
 
     const invoice = await request(app)
       .get(`/api/orders/${orderId}/invoice`)
@@ -847,6 +860,11 @@ describe('MongoDB-backed items API', () => {
       status: 'ACTIVE',
       reservedFor: null,
     });
+    const cancelledInvoice = await request(app)
+      .get(`/api/orders/${orderId}/invoice`)
+      .set('Cookie', buyer.cookie);
+    expect(cancelledInvoice.status).toBe(409);
+    expect(cancelledInvoice.body.error.code).toBe('ORDER_NOT_COMPLETED');
     expect(
       await Notification.countDocuments({
         relatedId: orderId,
@@ -922,6 +940,54 @@ describe('MongoDB-backed items API', () => {
 
     expect(responses.map((response) => response.status).sort()).toEqual([201, 409]);
     expect(await Order.countDocuments({ itemId })).toBe(1);
+  });
+
+  it('returns seller contact details only to the buyer on a non-cancelled order', async () => {
+    const seller = await createSession();
+    const buyer = await createSession();
+    const stranger = await createSession();
+    await User.findByIdAndUpdate(seller.id, {
+      name: 'Riya Shah',
+      email: 'riya.shah24@pccoepune.org',
+      phone: '+91 98765 43210',
+      department: 'Computer Engineering',
+      pickupPreference: 'HOSTEL_GATE',
+    });
+    const listing = await publishItem(seller.cookie);
+    const checkout = await request(app)
+      .post('/api/checkout')
+      .set('Cookie', buyer.cookie)
+      .send({ itemIds: [listing.body.item.id], paymentMethod: 'COD' });
+    const orderId = checkout.body.orders[0].id as string;
+
+    const buyerOrders = await request(app)
+      .get('/api/orders?side=buyer')
+      .set('Cookie', buyer.cookie);
+    expect(buyerOrders.body.orders[0].sellerDetails).toEqual({
+      name: 'Riya Shah',
+      email: 'riya.shah24@pccoepune.org',
+      phone: '+91 98765 43210',
+      department: 'Computer Engineering',
+      pickupPreference: 'HOSTEL_GATE',
+    });
+
+    const sellerOrders = await request(app)
+      .get('/api/orders?side=seller')
+      .set('Cookie', seller.cookie);
+    expect(sellerOrders.body.orders[0].sellerDetails).toBeNull();
+    const strangerOrders = await request(app)
+      .get('/api/orders?side=buyer')
+      .set('Cookie', stranger.cookie);
+    expect(strangerOrders.body.orders).toEqual([]);
+
+    const cancellation = await request(app)
+      .post(`/api/orders/${orderId}/cancel`)
+      .set('Cookie', buyer.cookie);
+    expect(cancellation.status).toBe(200);
+    const cancelledBuyerOrders = await request(app)
+      .get('/api/orders?side=buyer')
+      .set('Cookie', buyer.cookie);
+    expect(cancelledBuyerOrders.body.orders[0].sellerDetails).toBeNull();
   });
 
   it('completes an order only after both buyer and seller approve the handover', async () => {

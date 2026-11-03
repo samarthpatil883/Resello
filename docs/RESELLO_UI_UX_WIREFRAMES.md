@@ -266,6 +266,10 @@ buttons **View orders** and **Keep browsing**.
 | <-  Order ORD-1042           [copy]|
 | Engg Maths III            ₹250     |
 | Seller  Riya S.        [Message]   |
+| Seller details:                       |
+| riya.s@pccoepune.org                  |
+| Phone: +91 98765 43210                |
+| Computer Engineering · Hostel gate   |
 |                                    |
 | (x) Placed        28 Sep, 10:30    |
 |  |                                 |
@@ -278,12 +282,16 @@ buttons **View orders** and **Keep browsing**.
 | Seller: [ Approve completion ]     |
 | Order completes after both approve |
 | [ Cancel order ]  only while Placed|
-| [ Download invoice ]               |
+| [ Download invoice ] only when done|
 +------------------------------------+
 ```
 
 Statuses map exactly to `PLACED → CONFIRMED → COMPLETED` (or `CANCELLED`). Both buyer and seller must approve handover;
-after Completed, show **Rate seller** to the buyer. Buyers can download a PDF order record for any of their orders.
+after Completed, show **Rate seller** to the buyer and **Download invoice**. Hide the invoice option for every other status.
+For non-cancelled buyer orders, show the seller's name and verified college email, with phone, department and pickup
+preference when available. Include this data only in the authenticated buyer's order response; seller-side and cancelled
+orders must not expose it.
+Buyers can download a PDF order record only for fully completed orders.
 The record includes buyer and seller details, the seller's phone and campus pickup preference when provided,
 buyer handover notes, item, date, status, COD payment information and rupee totals. It displays the public
 Supabase Storage logo and canonical application URL from `INVOICE_LOGO_URL` and `INVOICE_APP_URL` (with local

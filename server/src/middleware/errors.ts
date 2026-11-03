@@ -43,7 +43,7 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, _ne
   if (error instanceof MulterError) {
     if (error.code === 'LIMIT_FILE_SIZE') {
       res.status(413).json({
-        error: { code: 'IMAGE_TOO_LARGE', message: 'Each image must be 5 MB or smaller.' },
+        error: { code: 'IMAGE_TOO_LARGE', message: 'The uploaded image exceeds the allowed size.' },
       });
       return;
     }

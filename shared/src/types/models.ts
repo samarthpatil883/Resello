@@ -28,9 +28,21 @@ export interface User {
   campusLocation: GeoJSONPoint | null;
   pickupPreference: PickupPreference | null;
   phone: string | null;
+  department: string | null;
+  graduationYear: number | null;
+  bio: string | null;
+  avatarUrl: string | null;
+  notificationPreferences: NotificationPreferences;
   isSuspended: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface NotificationPreferences {
+  orderUpdates: boolean;
+  marketplaceUpdates: boolean;
+  reviewUpdates: boolean;
+  accountUpdates: boolean;
 }
 
 export interface Category {

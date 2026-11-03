@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   mongo:
     image: mongo:7
@@ -14,8 +12,20 @@ services:
     image: axllent/mailpit
     container_name: resello-mailpit
     ports:
-      - '1025:1025'   # SMTP
-      - '8025:8025'   # Web UI
+      - '127.0.0.1:1025:1025' # SMTP
+      - '127.0.0.1:8026:8025' # Native Mailpit UI
+    restart: unless-stopped
+
+  mailpit-inbox:
+    image: nginx:alpine
+    container_name: resello-mailpit-inbox
+    ports:
+      - '127.0.0.1:8025:80' # Gmail-inspired local inbox
+    volumes:
+      - ./mailpit-ui:/usr/share/nginx/html:ro
+      - ./mailpit-ui/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - mailpit
     restart: unless-stopped
 
 volumes:

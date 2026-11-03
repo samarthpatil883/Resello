@@ -8,6 +8,7 @@ import type {
   WishlistItem,
   Notification,
   Category,
+  NotificationPreferences,
 } from './models';
 import type { Mode, PaymentMethod, ConditionType, PickupPreference, OtpPurpose } from './enums';
 
@@ -93,6 +94,18 @@ export interface SellerOnboardingRequest {
 export interface BadgesResponse {
   buy: number;
   sell: number;
+}
+
+export interface UpdateProfileRequest {
+  name?: string;
+  department?: string | null;
+  graduationYear?: number | null;
+  bio?: string | null;
+  phone?: string | null;
+}
+
+export interface NotificationPreferencesResponse {
+  preferences: NotificationPreferences;
 }
 
 // ─── Listings ────────────────────────────────────────────────────────────────

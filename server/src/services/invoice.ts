@@ -96,6 +96,13 @@ export async function createBuyerOrderInvoice(userId: string, orderId: string) {
       'Only the buyer on this order can download its invoice.',
     );
   }
+  if (order.status !== 'COMPLETED') {
+    throw new HttpError(
+      409,
+      'ORDER_NOT_COMPLETED',
+      'An invoice is available only after the order is fully completed.',
+    );
+  }
 
   const [buyer, seller, item, logo] = await Promise.all([
     User.findById(order.buyerId).select('name email').lean(),

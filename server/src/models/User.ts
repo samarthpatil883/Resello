@@ -1,5 +1,5 @@
 import { Schema, model, type HydratedDocument } from 'mongoose';
-import { Mode, PickupPreference, UserRole } from '@resello/shared';
+import { Mode, PickupPreference, UserRole, type NotificationPreferences } from '@resello/shared';
 
 export interface UserFields {
   createdAt: Date;
@@ -13,6 +13,13 @@ export interface UserFields {
   campusLocation: { type: 'Point'; coordinates: [number, number] } | null;
   pickupPreference: PickupPreference | null;
   phone: string | null;
+  department: string | null;
+  graduationYear: number | null;
+  bio: string | null;
+  avatarData: Buffer | null;
+  avatarContentType: string | null;
+  avatarUpdatedAt: Date | null;
+  notificationPreferences: NotificationPreferences;
   isSuspended: boolean;
   authVersion: number;
   refreshTokenHash: string | null;
@@ -45,6 +52,18 @@ const userSchema = new Schema<UserFields>(
     },
     pickupPreference: { type: String, enum: Object.values(PickupPreference), default: null },
     phone: { type: String, default: null },
+    department: { type: String, default: null, trim: true, maxlength: 100 },
+    graduationYear: { type: Number, default: null, min: 2000, max: 2100 },
+    bio: { type: String, default: null, trim: true, maxlength: 180 },
+    avatarData: { type: Buffer, default: null, select: false },
+    avatarContentType: { type: String, default: null, select: false },
+    avatarUpdatedAt: { type: Date, default: null },
+    notificationPreferences: {
+      orderUpdates: { type: Boolean, default: true },
+      marketplaceUpdates: { type: Boolean, default: true },
+      reviewUpdates: { type: Boolean, default: true },
+      accountUpdates: { type: Boolean, default: true },
+    },
     isSuspended: { type: Boolean, default: false, required: true },
     authVersion: { type: Number, default: 0, required: true, select: false },
     refreshTokenHash: { type: String, default: null, select: false },

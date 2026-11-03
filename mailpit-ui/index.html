@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f6f8fc" />
+    <title>Resello Mail — Local inbox</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <button class="menu-button icon-button" id="menu-toggle" aria-label="Toggle navigation">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+        </button>
+        <a class="brand" href="/" aria-label="Resello Mail inbox">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M3 6.5 12 13l9-6.5M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"
+              />
+            </svg>
+          </span>
+          <span class="brand-name">Resello <span>Mail</span></span>
+        </a>
+        <label class="search-box">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="10.8" cy="10.8" r="6.8" />
+            <path d="m16 16 4 4" />
+          </svg>
+          <input id="search-input" type="search" placeholder="Search mail" autocomplete="off" />
+          <kbd>Ctrl K</kbd>
+        </label>
+        <div class="top-actions">
+          <span class="dev-pill"><span></span> Local development</span>
+          <a
+            class="icon-button help-link"
+            href="http://localhost:8026"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Open native Mailpit interface"
+            title="Open native Mailpit"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M14 3h7v7M21 3l-9 9" />
+              <path d="M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5" />
+            </svg>
+          </a>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <aside class="sidebar" id="sidebar">
+          <a class="compose-button" href="http://localhost:8026" target="_blank" rel="noreferrer">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M14 3h7v7M21 3l-9 9" />
+              <path d="M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5" />
+            </svg>
+            <span>Native Mailpit</span>
+          </a>
+          <nav class="mail-nav" aria-label="Mail folders">
+            <button class="nav-item active" data-filter="inbox">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 4h16v16H4zM4 13h4l2 3h4l2-3h4" />
+              </svg>
+              <span>Inbox</span>
+              <span class="nav-count" id="unread-count">0</span>
+            </button>
+            <button class="nav-item" data-filter="unread">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <span>Unread</span>
+            </button>
+            <button class="nav-item" data-filter="all">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 5h16v14H4zM8 9h8M8 13h8M8 17h5" />
+              </svg>
+              <span>All mail</span>
+            </button>
+          </nav>
+          <div class="sidebar-divider"></div>
+          <div class="sidebar-label">DEVELOPMENT TOOLS</div>
+          <a
+            class="nav-item native-link"
+            href="http://localhost:8026"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M14 3h7v7M21 3l-9 9" />
+              <path d="M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5" />
+            </svg>
+            <span>Native Mailpit</span>
+          </a>
+          <div class="sidebar-note">
+            <span class="note-icon">i</span>
+            <p>Messages here are captured locally by Mailpit. Nothing is sent to real inboxes.</p>
+          </div>
+          <div class="sidebar-footer">Resello developer tools</div>
+        </aside>
+
+        <main class="main-content">
+          <section class="inbox-panel" id="inbox-panel" aria-label="Email inbox">
+            <div class="toolbar">
+              <div class="toolbar-left">
+                <button
+                  class="icon-button"
+                  id="refresh-button"
+                  aria-label="Refresh inbox"
+                  title="Refresh"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M20 7v5h-5M4 17v-5h5" />
+                    <path d="M5.5 9A7 7 0 0 1 18 6l2 6M4 12l2 6a7 7 0 0 0 12.5-3" />
+                  </svg>
+                </button>
+                <span class="toolbar-status" id="list-status">Inbox</span>
+              </div>
+              <div class="toolbar-right">
+                <span class="page-count" id="page-count"></span>
+                <button
+                  class="icon-button"
+                  id="older-button"
+                  aria-label="Older messages"
+                  title="Load older messages"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+                </button>
+              </div>
+            </div>
+            <div class="message-list" id="message-list" role="list" aria-live="polite">
+              <div class="loading-state">
+                <span class="spinner"></span> Loading your local inbox…
+              </div>
+            </div>
+            <div class="list-error hidden" id="list-error" role="alert"></div>
+          </section>
+
+          <section class="reader-panel hidden" id="reader-panel" aria-label="Email details">
+            <div class="reader-toolbar">
+              <button class="icon-button back-button" id="back-button" aria-label="Back to inbox">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+              </button>
+              <span class="reader-toolbar-title">Message</span>
+              <button
+                class="icon-button"
+                id="reader-refresh"
+                aria-label="Refresh message"
+                title="Refresh"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M20 7v5h-5M4 17v-5h5" />
+                  <path d="M5.5 9A7 7 0 0 1 18 6l2 6M4 12l2 6a7 7 0 0 0 12.5-3" />
+                </svg>
+              </button>
+            </div>
+            <article id="message-detail"></article>
+          </section>
+          <div class="status-error hidden" id="status-error" role="alert"></div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

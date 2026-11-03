@@ -7,7 +7,17 @@ import {
   type ReactNode,
 } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  GraduationCap,
+  LockKeyhole,
+  Mail,
+  ShieldCheck,
+  UserRound,
+} from 'lucide-react';
 import type { User } from '@resello/shared';
 import { api, getApiErrorCode, getApiErrorMessage } from '../../lib/api';
 import { useAuth } from './AuthContext';
@@ -55,6 +65,28 @@ function AuthError({ message }: { message: string | null }) {
   ) : null;
 }
 
+function AuthProgress({ step }: { step: number }) {
+  const steps = ['Your details', 'Password', 'Confirm'];
+  return (
+    <ol className="auth-progress" aria-label={`Signup progress, step ${step} of ${steps.length}`}>
+      {steps.map((label, index) => {
+        const number = index + 1;
+        const state = number < step ? 'complete' : number === step ? 'current' : 'upcoming';
+        return (
+          <li
+            key={label}
+            className={`auth-progress-step auth-progress-${state}`}
+            aria-current={state === 'current' ? 'step' : undefined}
+          >
+            <span aria-hidden="true">{number < step ? <ShieldCheck size={15} /> : number}</span>
+            <small>{label}</small>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 function getCollegeEmailError(email: string) {
   const normalized = email.trim().toLowerCase();
   const separator = normalized.lastIndexOf('@');
@@ -85,11 +117,37 @@ export function JoinPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [step, setStep] = useState(1);
+  const [emailTouched, setEmailTouched] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  function continueSignup() {
+    setError(null);
+    if (step === 1) {
+      if (name.trim().length < 2) return setError('Enter your full name to continue.');
+      const emailError = getCollegeEmailError(email);
+      if (emailError) {
+        setEmailTouched(true);
+        return setError(emailError);
+      }
+    } else if (step === 2 && password.length < 10) {
+      return setError('Use at least 10 characters for your password.');
+    }
+    setStep((current) => Math.min(current + 1, 3));
+  }
+
+  function goBack() {
+    setError(null);
+    setStep((current) => Math.max(current - 1, 1));
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (step < 3) {
+      continueSignup();
+      return;
+    }
     const emailError = getCollegeEmailError(email);
     if (emailError) return setError(emailError);
     if (password.length < 10) return setError('Use at least 10 characters for your password.');
@@ -130,86 +188,154 @@ export function JoinPage() {
     <AuthFrame
       eyebrow="A BETTER WAY TO PASS IT ON"
       title="Join Resello"
-      description="One account for both sides of campus life."
+      description="Create one verified account for buying and selling around PCCOE."
     >
-      <form className="auth-form join-form" onSubmit={submit}>
-        <label>
-          Full name
-          <input
-            autoComplete="name"
-            required
-            minLength={2}
-            maxLength={80}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder="Samarth Patil"
-          />
-        </label>
-        <label>
-          College email
-          <input
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(event) => updateEmail(event.target.value)}
-            placeholder="you@pccoepune.org"
-          />
-          <small>Use your college email, e.g. name.surname24@pccoepune.org</small>
-        </label>
-        <div className="auth-password-field">
-          <label htmlFor="join-password">Password</label>
-          <span className="auth-password-control">
-            <input
-              id="join-password"
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="new-password"
-              required
-              minLength={10}
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="At least 10 characters"
-            />
-            <button
-              className="auth-password-toggle"
-              type="button"
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-              aria-pressed={showPassword}
-              onClick={() => setShowPassword((visible) => !visible)}
-            >
-              {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
-            </button>
-          </span>
-          {passwordStrength && <small>Password strength: {passwordStrength}</small>}
-        </div>
-        <div className="auth-password-field">
-          <label htmlFor="join-confirm-password">Confirm password</label>
-          <span className="auth-password-control">
-            <input
-              id="join-confirm-password"
-              type={showConfirmPassword ? 'text' : 'password'}
-              autoComplete="new-password"
-              required
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              placeholder="Enter your password again"
-            />
-            <button
-              className="auth-password-toggle"
-              type="button"
-              aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
-              aria-pressed={showConfirmPassword}
-              onClick={() => setShowConfirmPassword((visible) => !visible)}
-            >
-              {showConfirmPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
-            </button>
-          </span>
+      <AuthProgress step={step} />
+      <form className="auth-form join-form" onSubmit={(event) => void submit(event)}>
+        <div key={step} className="auth-step-content">
+          {step === 1 && (
+            <>
+              <label className="auth-icon-field">
+                <span>Full name</span>
+                <span className="auth-input-wrap">
+                  <UserRound size={18} aria-hidden="true" />
+                  <input
+                    autoComplete="name"
+                    autoFocus
+                    required
+                    minLength={2}
+                    maxLength={80}
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    placeholder="Samarth Patil"
+                  />
+                </span>
+              </label>
+              <label className="auth-icon-field">
+                <span>College email</span>
+                <span className="auth-input-wrap">
+                  <Mail size={18} aria-hidden="true" />
+                  <input
+                    type="email"
+                    autoComplete="email"
+                    required
+                    aria-invalid={Boolean(emailTouched && getCollegeEmailError(email))}
+                    value={email}
+                    onBlur={() => setEmailTouched(true)}
+                    onChange={(event) => {
+                      updateEmail(event.target.value);
+                      setError(null);
+                    }}
+                    placeholder="you@pccoepune.org"
+                  />
+                </span>
+                <small>Use your college email, e.g. name.surname24@pccoepune.org</small>
+                {emailTouched && getCollegeEmailError(email) && (
+                  <small className="auth-field-error">{getCollegeEmailError(email)}</small>
+                )}
+              </label>
+            </>
+          )}
+          {step === 2 && (
+            <div className="auth-password-field">
+              <label htmlFor="join-password">Create a password</label>
+              <span className="auth-input-wrap auth-password-control">
+                <LockKeyhole size={18} aria-hidden="true" />
+                <input
+                  id="join-password"
+                  autoFocus
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  required
+                  minLength={10}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="At least 10 characters"
+                />
+                <button
+                  className="auth-password-toggle"
+                  type="button"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword((visible) => !visible)}
+                >
+                  {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                </button>
+              </span>
+              <small>Password strength: {passwordStrength || 'Enter a password'}</small>
+              <p className="auth-step-hint">
+                Use at least 10 characters. Your password protects your verified campus account.
+              </p>
+            </div>
+          )}
+          {step === 3 && (
+            <div className="auth-password-field">
+              <label htmlFor="join-confirm-password">Confirm your password</label>
+              <span className="auth-input-wrap auth-password-control">
+                <LockKeyhole size={18} aria-hidden="true" />
+                <input
+                  id="join-confirm-password"
+                  autoFocus
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  required
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  placeholder="Enter your password again"
+                />
+                <button
+                  className="auth-password-toggle"
+                  type="button"
+                  aria-label={
+                    showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'
+                  }
+                  aria-pressed={showConfirmPassword}
+                  onClick={() => setShowConfirmPassword((visible) => !visible)}
+                >
+                  {showConfirmPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                </button>
+              </span>
+              <p className="auth-step-hint">
+                We’ll send a one-time verification code to <strong>{email}</strong>.
+              </p>
+            </div>
+          )}
         </div>
         <AuthError message={error} />
-        <button className="button button-primary button-wide" type="submit" disabled={busy}>
-          {busy ? 'Sending code…' : 'Send verification code'}
-        </button>
+        <div className="auth-step-actions">
+          {step > 1 && (
+            <button
+              className="button button-secondary auth-back-step"
+              type="button"
+              onClick={goBack}
+            >
+              <ArrowLeft size={17} aria-hidden="true" /> Back
+            </button>
+          )}
+          {step < 3 ? (
+            <button
+              className="button button-primary button-wide auth-continue"
+              type="button"
+              onClick={continueSignup}
+            >
+              Continue <ArrowRight size={17} aria-hidden="true" />
+            </button>
+          ) : (
+            <button
+              className="button button-primary button-wide auth-continue"
+              type="submit"
+              disabled={busy}
+            >
+              {busy ? 'Sending code…' : 'Send verification code'}
+              {!busy && <ArrowRight size={17} aria-hidden="true" />}
+            </button>
+          )}
+        </div>
       </form>
+      <p className="auth-trust-note">
+        <GraduationCap size={17} aria-hidden="true" />
+        PCCOE students only · Verified with a one-time code
+      </p>
       <p className="auth-switch">
         Already a member? <Link to="/login">Log in</Link>
       </p>
@@ -370,6 +496,8 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -400,27 +528,54 @@ export function LoginPage() {
       description="Your campus finds and listings are waiting."
     >
       <form className="auth-form" onSubmit={submit}>
-        <label>
-          College email
-          <input
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="you@pccoepune.org"
-          />
+        <label className="auth-icon-field">
+          <span>College email</span>
+          <span className="auth-input-wrap">
+            <Mail size={18} aria-hidden="true" />
+            <input
+              type="email"
+              autoComplete="email"
+              required
+              aria-invalid={Boolean(emailTouched && getCollegeEmailError(email))}
+              value={email}
+              onBlur={() => setEmailTouched(true)}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                setError(null);
+              }}
+              placeholder="you@pccoepune.org"
+            />
+          </span>
+          <small>Sign in with your verified PCCOE email.</small>
+          {emailTouched && getCollegeEmailError(email) && (
+            <small className="auth-field-error">{getCollegeEmailError(email)}</small>
+          )}
         </label>
-        <label>
-          Password
-          <input
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="Your password"
-          />
+        <label className="auth-password-field">
+          <span>Password</span>
+          <span className="auth-input-wrap auth-password-control">
+            <LockKeyhole size={18} aria-hidden="true" />
+            <input
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                setError(null);
+              }}
+              placeholder="Your password"
+            />
+            <button
+              className="auth-password-toggle"
+              type="button"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-pressed={showPassword}
+              onClick={() => setShowPassword((visible) => !visible)}
+            >
+              {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+            </button>
+          </span>
         </label>
         <div className="form-row">
           <span />
@@ -431,6 +586,10 @@ export function LoginPage() {
           {busy ? 'Logging in…' : 'Log in'}
         </button>
       </form>
+      <p className="auth-trust-note">
+        <ShieldCheck size={16} aria-hidden="true" />
+        Secure sign-in for verified PCCOE accounts
+      </p>
       <p className="auth-switch">
         New to Resello? <Link to="/join">Create an account</Link>
       </p>

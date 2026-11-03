@@ -4,6 +4,7 @@ import { HttpError } from '../middleware/errors';
 import { Item } from '../models/Item';
 import { Order } from '../models/Order';
 import { Review } from '../models/Review';
+import { User } from '../models/User';
 import {
   notifyOrderCancelled,
   notifyOrderCompleted,
@@ -24,32 +25,58 @@ export async function getOrdersForUser(userId: string, side: OrderSide) {
 
   const orderIds = orders.map((order) => order._id);
   const itemIds = orders.map((order) => order.itemId);
-  const [items, reviews] = await Promise.all([
+  const sellerIds = [
+    ...new Set(
+      orders
+        .filter((order) => side === 'buyer' && order.status !== 'CANCELLED')
+        .map((order) => order.sellerId.toString()),
+    ),
+  ].map((id) => new Types.ObjectId(id));
+  const [items, reviews, sellers] = await Promise.all([
     Item.find({ _id: { $in: itemIds } })
       .select('_id title')
       .lean(),
     Review.find({ orderId: { $in: orderIds } })
       .select('orderId rating')
       .lean(),
+    User.find({ _id: { $in: sellerIds } })
+      .select('name email phone department pickupPreference')
+      .lean(),
   ]);
   const titlesByItemId = new Map(items.map((item) => [item._id.toString(), item.title]));
   const ratingsByOrderId = new Map(
     reviews.map((review) => [review.orderId.toString(), review.rating]),
   );
+  const sellersById = new Map(sellers.map((seller) => [seller._id.toString(), seller]));
 
-  return orders.map((order) => ({
-    id: order._id.toString(),
-    itemId: order.itemId.toString(),
-    title: order.itemTitle ?? titlesByItemId.get(order.itemId.toString()) ?? 'Unavailable item',
-    price: Number(order.price),
-    status: order.status,
-    createdAt: order.createdAt.toISOString(),
-    completionApprovals: {
-      buyer: Boolean(order.buyerCompletedAt),
-      seller: Boolean(order.sellerCompletedAt),
-    },
-    rating: ratingsByOrderId.get(order._id.toString()) ?? null,
-  }));
+  return orders.map((order) => {
+    const seller =
+      side === 'buyer' && order.status !== 'CANCELLED'
+        ? sellersById.get(order.sellerId.toString())
+        : null;
+    return {
+      id: order._id.toString(),
+      itemId: order.itemId.toString(),
+      title: order.itemTitle ?? titlesByItemId.get(order.itemId.toString()) ?? 'Unavailable item',
+      price: Number(order.price),
+      status: order.status,
+      createdAt: order.createdAt.toISOString(),
+      completionApprovals: {
+        buyer: Boolean(order.buyerCompletedAt),
+        seller: Boolean(order.sellerCompletedAt),
+      },
+      rating: ratingsByOrderId.get(order._id.toString()) ?? null,
+      sellerDetails: seller
+        ? {
+            name: seller.name,
+            email: seller.email,
+            phone: seller.phone,
+            department: seller.department,
+            pickupPreference: seller.pickupPreference,
+          }
+        : null,
+    };
+  });
 }
 
 export async function approveOrderCompletion(userId: string, orderId: string) {

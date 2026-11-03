@@ -300,18 +300,6 @@ export function ModeShell({ mode, children }: { mode: Mode; children?: ReactNode
           <SearchBox key={mode} mode={mode} />
           <div className="header-actions">
             <Link
-              to="/notifications"
-              className="icon-button"
-              aria-label={`Notifications${notificationCount ? `, ${notificationCount} unread` : ''}`}
-            >
-              <Bell size={19} />
-              {notificationCount > 0 && (
-                <span className="wishlist-count" aria-hidden="true">
-                  {notificationCount > 99 ? '99+' : notificationCount}
-                </span>
-              )}
-            </Link>
-            <Link
               to="/buy/wishlist"
               className="icon-button wishlist-header-button"
               aria-label={`Wishlist${wishlistCount ? `, ${wishlistCount} saved ${wishlistCount === 1 ? 'item' : 'items'}` : ''}`}
@@ -321,6 +309,18 @@ export function ModeShell({ mode, children }: { mode: Mode; children?: ReactNode
               {wishlistCount > 0 && (
                 <span className="wishlist-count" aria-hidden="true">
                   {wishlistCount > 99 ? '99+' : wishlistCount}
+                </span>
+              )}
+            </Link>
+            <Link
+              to="/notifications"
+              className="icon-button"
+              aria-label={`Notifications${notificationCount ? `, ${notificationCount} unread` : ''}`}
+            >
+              <Bell size={19} />
+              {notificationCount > 0 && (
+                <span className="wishlist-count" aria-hidden="true">
+                  {notificationCount > 99 ? '99+' : notificationCount}
                 </span>
               )}
             </Link>

@@ -51,9 +51,32 @@ components:
         pickupPreference:
           { type: string, enum: [ON_CAMPUS, HOSTEL_GATE, DEPARTMENT], nullable: true }
         phone: { type: string, nullable: true }
+        department: { type: string, nullable: true }
+        graduationYear: { type: integer, nullable: true }
+        bio: { type: string, nullable: true }
+        avatarUrl: { type: string, nullable: true }
+        notificationPreferences: { $ref: '#/components/schemas/NotificationPreferences' }
         isSuspended: { type: boolean }
         createdAt: { type: string }
         updatedAt: { type: string }
+    SellerOrderDetails:
+      type: object
+      required: [name, email, phone, department, pickupPreference]
+      properties:
+        name: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string, nullable: true }
+        department: { type: string, nullable: true }
+        pickupPreference:
+          { type: string, enum: [ON_CAMPUS, HOSTEL_GATE, DEPARTMENT], nullable: true }
+    NotificationPreferences:
+      type: object
+      required: [orderUpdates, marketplaceUpdates, reviewUpdates, accountUpdates]
+      properties:
+        orderUpdates: { type: boolean }
+        marketplaceUpdates: { type: boolean }
+        reviewUpdates: { type: boolean }
+        accountUpdates: { type: boolean }
     GeoJSONPoint:
       type: object
       properties:
@@ -532,6 +555,201 @@ paths:
                     properties:
                       buy: { type: integer }
                       sell: { type: integer }
+  /api/auth/change-password:
+    post:
+      tags: [Auth]
+      operationId: changePassword
+      summary: Change the authenticated user's password
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword: { type: string, minLength: 1, maxLength: 128 }
+                newPassword: { type: string, minLength: 10, maxLength: 128 }
+      responses:
+        '200':
+          description: Password changed and session rotated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message]
+                properties:
+                  message: { type: string }
+        '400':
+          description: Current password is incorrect or new password is invalid
+        '401':
+          description: Authentication required
+  /api/me/profile:
+    patch:
+      tags: [Account]
+      operationId: updateMyProfile
+      summary: Update editable profile details without changing the verified college email
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                name: { type: string, minLength: 2, maxLength: 80 }
+                department: { type: string, maxLength: 100, nullable: true }
+                graduationYear: { type: integer, minimum: 2000, maximum: 2100, nullable: true }
+                bio: { type: string, maxLength: 180, nullable: true }
+                phone: { type: string, maxLength: 25, nullable: true }
+      responses:
+        '200':
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user]
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+        '400':
+          description: Invalid profile values
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Authentication required
+  /api/me/avatar:
+    get:
+      tags: [Account]
+      operationId: getMyAvatar
+      summary: Get the authenticated user's profile photo
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: JPEG, PNG, or WebP profile photo
+          content:
+            image/jpeg: {}
+            image/png: {}
+            image/webp: {}
+        '404':
+          description: No profile photo is set
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+    post:
+      tags: [Account]
+      operationId: uploadMyAvatar
+      summary: Upload a profile photo (JPEG, PNG, or WebP; up to 2 MB)
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [avatar]
+              properties:
+                avatar: { type: string, format: binary }
+      responses:
+        '200':
+          description: Updated profile with the new avatar URL
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user]
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+        '400':
+          description: Invalid image
+        '401':
+          description: Authentication required
+        '413':
+          description: Image exceeds 2 MB
+    delete:
+      tags: [Account]
+      operationId: deleteMyAvatar
+      summary: Remove the authenticated user's profile photo
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Profile photo removed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user]
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+  /api/me/notification-preferences:
+    get:
+      tags: [Account]
+      operationId: getMyNotificationPreferences
+      summary: Get notification preferences
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Current notification preferences
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [preferences]
+                properties:
+                  preferences: { $ref: '#/components/schemas/NotificationPreferences' }
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+    put:
+      tags: [Account]
+      operationId: updateMyNotificationPreferences
+      summary: Replace notification preferences
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPreferences'
+      responses:
+        '200':
+          description: Updated notification preferences
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [preferences]
+                properties:
+                  preferences: { $ref: '#/components/schemas/NotificationPreferences' }
+        '400':
+          description: Invalid notification preferences
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
   /api/me/mode:
     patch:
       tags: [Account]
@@ -852,13 +1070,31 @@ paths:
                     type: array
                     items:
                       type: object
-                      required: [id, itemId, title, price, status, completionApprovals, rating]
+                      required:
+                        [
+                          id,
+                          itemId,
+                          title,
+                          price,
+                          status,
+                          completionApprovals,
+                          rating,
+                          sellerDetails,
+                        ]
                       properties:
                         id: { type: string }
                         itemId: { type: string }
                         title: { type: string }
                         price: { type: number }
                         status: { type: string, enum: [PLACED, CONFIRMED, COMPLETED, CANCELLED] }
+                        sellerDetails:
+                          type: object
+                          allOf:
+                            - { $ref: '#/components/schemas/SellerOrderDetails' }
+                          nullable: true
+                          description: >
+                            Returned only for the authenticated buyer's non-cancelled order.
+                            Seller-side order responses and cancelled buyer orders return null.
                         completionApprovals:
                           type: object
                           required: [buyer, seller]
@@ -979,8 +1215,9 @@ paths:
       tags: [Orders]
       summary: Download the authenticated buyer's order invoice
       description: >
-        Returns a PDF order record with buyer and seller details, item, order date, status,
-        payment method and amount. Resello adds no shipping fees or taxes; this is not a tax invoice.
+        Returns a PDF order record only after the order is fully completed, with buyer and seller
+        details, item, order date, status, payment method and amount. Resello adds no shipping fees
+        or taxes; this is not a tax invoice.
       security:
         - cookieAuth: []
       parameters:
@@ -1011,6 +1248,11 @@ paths:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
         '403':
           description: Only the buyer on the order can download its invoice
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '409':
+          description: Invoice is available only after the order is fully completed
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }

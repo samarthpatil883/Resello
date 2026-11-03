@@ -1,10 +1,19 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Download } from 'lucide-react';
+import { PickupPreference } from '@resello/shared';
 import { api, getApiErrorMessage } from '../../lib/api';
 
 type OrderSide = 'buyer' | 'seller';
 type OrderStatus = 'PLACED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
+
+interface SellerOrderDetails {
+  name: string;
+  email: string;
+  phone: string | null;
+  department: string | null;
+  pickupPreference: PickupPreference | null;
+}
 
 interface MarketplaceOrder {
   id: string;
@@ -15,7 +24,14 @@ interface MarketplaceOrder {
   createdAt: string;
   completionApprovals: { buyer: boolean; seller: boolean };
   rating: number | null;
+  sellerDetails: SellerOrderDetails | null;
 }
+
+const pickupPreferenceLabels: Record<PickupPreference, string> = {
+  [PickupPreference.ON_CAMPUS]: 'On-campus meetup',
+  [PickupPreference.HOSTEL_GATE]: 'Hostel gate',
+  [PickupPreference.DEPARTMENT]: 'Department',
+};
 
 const priceFormatter = new Intl.NumberFormat('en-IN', {
   style: 'currency',
@@ -318,7 +334,50 @@ export function OrderPage({ side }: { side: OrderSide }) {
                   </span>
                 </div>
 
-                {side === 'buyer' && (
+                {side === 'buyer' && order.sellerDetails && (
+                  <section
+                    className="grid gap-2 rounded-xl border border-teal-100 bg-teal-50 p-4 text-sm"
+                    aria-label="Seller details"
+                  >
+                    <h2 className="font-semibold text-slate-900">
+                      Seller details · {order.sellerDetails.name}
+                    </h2>
+                    <p>
+                      <span className="font-medium text-slate-700">Verified college email: </span>
+                      <a
+                        className="break-all text-teal-800 underline"
+                        href={`mailto:${order.sellerDetails.email}`}
+                      >
+                        {order.sellerDetails.email}
+                      </a>
+                    </p>
+                    {order.sellerDetails.phone && (
+                      <p>
+                        <span className="font-medium text-slate-700">Phone: </span>
+                        <a
+                          className="text-teal-800 underline"
+                          href={`tel:${order.sellerDetails.phone}`}
+                        >
+                          {order.sellerDetails.phone}
+                        </a>
+                      </p>
+                    )}
+                    {order.sellerDetails.department && (
+                      <p>
+                        <span className="font-medium text-slate-700">Department: </span>
+                        {order.sellerDetails.department}
+                      </p>
+                    )}
+                    {order.sellerDetails.pickupPreference && (
+                      <p>
+                        <span className="font-medium text-slate-700">Preferred pickup: </span>
+                        {pickupPreferenceLabels[order.sellerDetails.pickupPreference]}
+                      </p>
+                    )}
+                  </section>
+                )}
+
+                {side === 'buyer' && order.status === 'COMPLETED' && (
                   <div className="grid gap-2">
                     <button
                       type="button"

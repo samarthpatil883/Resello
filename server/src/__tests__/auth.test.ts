@@ -4,7 +4,9 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import { app } from '../app';
 import { User } from '../models/User';
 import { OtpToken } from '../models/OtpToken';
+import { Notification } from '../models/Notification';
 import { sendOtpEmail } from '../services/mail';
+import { notifySellerReview } from '../services/notifications';
 import bcrypt from 'bcryptjs';
 
 jest.mock('../services/mail', () => ({ sendOtpEmail: jest.fn().mockResolvedValue(undefined) }));
@@ -40,6 +42,106 @@ async function register(email = 'samarth.patil24@pccoepune.org') {
 }
 
 describe('college email registration and verification', () => {
+  it('updates profile and notification preferences, manages an avatar, and changes password safely', async () => {
+    await register();
+    const verification = await request(app)
+      .post('/api/auth/verify-email')
+      .send({ email: 'samarth.patil24@pccoepune.org', code: sendOtp.mock.calls[0][1] });
+    const verificationCookieHeader = verification.headers['set-cookie'];
+    const cookies = Array.isArray(verificationCookieHeader)
+      ? verificationCookieHeader
+      : [verificationCookieHeader].filter((value): value is string => typeof value === 'string');
+
+    const profile = await request(app).patch('/api/me/profile').set('Cookie', cookies).send({
+      name: 'Samarth P.',
+      department: 'Computer Engineering',
+      graduationYear: 2027,
+      bio: 'PCCOE student',
+      phone: '9876543210',
+    });
+    expect(profile.status).toBe(200);
+    expect(profile.body.user).toMatchObject({
+      name: 'Samarth P.',
+      email: 'samarth.patil24@pccoepune.org',
+      department: 'Computer Engineering',
+      graduationYear: 2027,
+      bio: 'PCCOE student',
+      phone: '9876543210',
+    });
+
+    const emailEdit = await request(app)
+      .patch('/api/me/profile')
+      .set('Cookie', cookies)
+      .send({ email: 'different.student@pccoepune.org' });
+    expect(emailEdit.status).toBe(400);
+
+    const preferences = {
+      orderUpdates: true,
+      marketplaceUpdates: false,
+      reviewUpdates: false,
+      accountUpdates: true,
+    };
+    const savedPreferences = await request(app)
+      .put('/api/me/notification-preferences')
+      .set('Cookie', cookies)
+      .send(preferences);
+    expect(savedPreferences.status).toBe(200);
+    expect(savedPreferences.body.preferences).toEqual(preferences);
+    expect(
+      (await request(app).get('/api/me/notification-preferences').set('Cookie', cookies)).body
+        .preferences,
+    ).toEqual(preferences);
+
+    const user = await User.findOne({ email: 'samarth.patil24@pccoepune.org' });
+    if (!user) throw new Error('Expected the verified test user to exist.');
+    await notifySellerReview({
+      sellerId: user._id,
+      rating: 5,
+      orderId: new mongoose.Types.ObjectId(),
+    });
+    expect(await Notification.countDocuments({ recipientId: user._id })).toBe(0);
+
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]);
+    const uploadedAvatar = await request(app)
+      .post('/api/me/avatar')
+      .set('Cookie', cookies)
+      .attach('avatar', png, { filename: 'profile.png', contentType: 'image/png' });
+    expect(uploadedAvatar.status).toBe(200);
+    expect(uploadedAvatar.body.user.avatarUrl).toContain('/api/me/avatar?v=');
+    const avatar = await request(app).get('/api/me/avatar').set('Cookie', cookies);
+    expect(avatar.status).toBe(200);
+    expect(avatar.headers['content-type']).toContain('image/png');
+    expect(
+      (await request(app).delete('/api/me/avatar').set('Cookie', cookies)).body.user.avatarUrl,
+    ).toBeNull();
+
+    const wrongPassword = await request(app)
+      .post('/api/auth/change-password')
+      .set('Cookie', cookies)
+      .send({ currentPassword: 'wrong-password', newPassword: 'another-strong-password' });
+    expect(wrongPassword.status).toBe(400);
+    expect(wrongPassword.body.error.code).toBe('CURRENT_PASSWORD_INCORRECT');
+
+    const changedPassword = await request(app)
+      .post('/api/auth/change-password')
+      .set('Cookie', cookies)
+      .send({ currentPassword: 'a-strong-password', newPassword: 'another-strong-password' });
+    expect(changedPassword.status).toBe(200);
+    const rotatedCookieHeader = changedPassword.headers['set-cookie'];
+    const rotatedCookies = Array.isArray(rotatedCookieHeader)
+      ? rotatedCookieHeader
+      : [rotatedCookieHeader].filter((value): value is string => typeof value === 'string');
+    expect((await request(app).get('/api/auth/me').set('Cookie', cookies)).status).toBe(401);
+    expect((await request(app).get('/api/auth/me').set('Cookie', rotatedCookies)).status).toBe(200);
+    expect(
+      (
+        await request(app)
+          .post('/api/auth/login')
+          .send({ email: 'samarth.patil24@pccoepune.org', password: 'another-strong-password' })
+      ).status,
+    ).toBe(200);
+  }, 30_000);
+
   it('registers a college email, verifies the OTP and sets HttpOnly session cookies', async () => {
     const registration = await register('SAMARTH.Patil24@PCCOEPUNE.ORG');
     expect(registration.status).toBe(201);

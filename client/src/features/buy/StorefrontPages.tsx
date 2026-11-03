@@ -1,8 +1,12 @@
 import {
   ArrowRight,
+  ArrowUpRight,
+  BadgePercent,
   BookOpen,
+  ClipboardCheck,
   CheckCircle2,
   ChevronDown,
+  CircleCheck,
   Compass,
   LocateFixed,
   Laptop,
@@ -10,6 +14,7 @@ import {
   PackageOpen,
   Plus,
   Sparkles,
+  Star,
   Tag,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -31,6 +36,7 @@ import { ItemGrid } from './ItemGrid';
 
 export { BuyCartPage } from './MarketplacePages';
 export { BuyOrdersPage, SellOrdersPage } from './OrderPages';
+export { SharedProfilePage } from '../shared/ProfilePage';
 
 const categoryIcons: Partial<Record<ListingCategory, typeof BookOpen>> = {
   [ListingCategory.BOOKS]: BookOpen,
@@ -99,10 +105,46 @@ export function BuyHomePage() {
             Explore the marketplace <ArrowRight size={17} />
           </button>
         </div>
-        <div className="campus-banner-orbit" aria-hidden="true">
-          <span className="orbit-book">Aa</span>
-          <span className="orbit-star">✳</span>
-          <span className="orbit-dot" />
+        <div className="campus-banner-art" aria-hidden="true">
+          <span className="banner-doodle banner-doodle-one">✳</span>
+          <span className="banner-doodle banner-doodle-two">✦</span>
+          <span className="banner-pin banner-pin-one">
+            <MapPin size={22} />
+          </span>
+          <span className="banner-pin banner-pin-two">
+            <MapPin size={18} />
+          </span>
+          <div className="banner-snapshot banner-snapshot-study">
+            <img src="/images/buy-hero-lab.png" alt="" />
+          </div>
+          <div className="banner-phone">
+            <img src="/images/buy-hero-marketplace.png" alt="" />
+          </div>
+          <div className="banner-snapshot banner-snapshot-campus">
+            <img src="/images/buy-hero-campus.png" alt="" />
+          </div>
+          <div className="banner-float banner-float-nearby">
+            <span>Nearby</span>
+            <b>
+              <MapPin size={13} /> PCCOE campus
+            </b>
+          </div>
+          <div className="banner-float banner-float-books">
+            <BookOpen size={15} />
+            <span>
+              Books
+              <br />
+              <b>Free!</b>
+            </span>
+          </div>
+          <div className="banner-float banner-float-distance">
+            <MapPin size={15} />
+            <span>
+              Distance
+              <br />
+              <b>2 mins away</b>
+            </span>
+          </div>
         </div>
       </section>
 
@@ -600,42 +642,78 @@ export function SellHomePage() {
   }, [statsReloadKey]);
 
   return (
-    <div className="storefront-page">
+    <div className="storefront-page seller-dashboard-page">
       <div className="dashboard-welcome">
         <div>
           <p className="eyebrow">YOUR SELLER SPACE</p>
-          <h1 tabIndex={-1}>
-            Good things deserve
-            <br />
-            <span>another life.</span>
-          </h1>
+          <h1 tabIndex={-1}>Good things deserve another life.</h1>
           <p>Your listings, orders and campus community — all in one place.</p>
         </div>
-        <Link to="/sell/listings/new" className="button button-sell">
+        <Link to="/sell/listings/new" className="button button-sell dashboard-list-button">
           <Plus size={18} /> List an item
         </Link>
       </div>
-      <section className="seller-stats" aria-label="Seller summary">
-        {[
-          ['Active listings', stats ? String(stats.activeListings) : statsError ? '—' : '…'],
-          ['Needs your action', stats ? String(stats.needsYourAction) : statsError ? '—' : '…'],
-          ['Completed sales', stats ? String(stats.completedSales) : statsError ? '—' : '…'],
-          [
-            'Your rating',
-            stats
-              ? stats.averageRating === null
-                ? 'No ratings yet'
-                : `${stats.averageRating.toFixed(1)} (${stats.ratingCount})`
-              : statsError
-                ? '—'
-                : '…',
-          ],
-        ].map(([label, value]) => (
-          <article key={label} className="stat-card">
-            <span>{label}</span>
-            <strong aria-live="polite">{value}</strong>
+      <section className="seller-performance" aria-labelledby="seller-performance-title">
+        <div className="seller-performance-heading">
+          <h2 id="seller-performance-title">Your space at a glance</h2>
+          <p>Track your seller performance</p>
+        </div>
+        <div className="seller-stats" aria-label="Seller summary">
+          <article className="stat-card">
+            <div className="stat-card-heading">
+              <span>Active listings</span>
+              <ClipboardCheck aria-hidden="true" />
+            </div>
+            <strong aria-live="polite">
+              {stats ? stats.activeListings : statsError ? '—' : '…'}
+            </strong>
           </article>
-        ))}
+          <article className="stat-card">
+            <div className="stat-card-heading">
+              <span>Needs your action</span>
+              <CircleCheck aria-hidden="true" />
+            </div>
+            <div className="stat-card-value">
+              <strong aria-live="polite">
+                {stats ? stats.needsYourAction : statsError ? '—' : '…'}
+              </strong>
+              {stats?.needsYourAction === 0 && <span className="all-caught-up">All caught up</span>}
+            </div>
+          </article>
+          <article className="stat-card">
+            <div className="stat-card-heading">
+              <span>Completed sales</span>
+              <BadgePercent aria-hidden="true" />
+            </div>
+            <strong aria-live="polite">
+              {stats ? stats.completedSales : statsError ? '—' : '…'}
+            </strong>
+          </article>
+          <article className="stat-card stat-card-rating">
+            <div className="stat-card-heading">
+              <span>Your rating</span>
+              <span className="rating-stars" aria-label="Five stars">
+                {Array.from({ length: 5 }, (_, index) => (
+                  <Star key={index} aria-hidden="true" />
+                ))}
+              </span>
+            </div>
+            <strong aria-live="polite">
+              {stats
+                ? stats.averageRating === null
+                  ? 'No ratings yet'
+                  : stats.averageRating.toFixed(1)
+                : statsError
+                  ? '—'
+                  : '…'}
+            </strong>
+            {stats?.averageRating !== null && stats && (
+              <small>
+                {stats.ratingCount} review{stats.ratingCount === 1 ? '' : 's'}
+              </small>
+            )}
+          </article>
+        </div>
       </section>
       {statsError ? (
         <section className="seller-empty" aria-label="Seller statistics error">
@@ -651,7 +729,7 @@ export function SellHomePage() {
           </button>
         </section>
       ) : stats?.activeListings ? (
-        <section className="seller-empty">
+        <section className="seller-empty seller-listings-summary">
           <span className="empty-icon empty-icon-sell">
             <Tag size={28} />
           </span>
@@ -662,8 +740,8 @@ export function SellHomePage() {
             </h2>
             <p>Manage your listings or publish another unique item for campus buyers.</p>
           </div>
-          <Link className="button button-sell" to="/sell/listings">
-            View my listings
+          <Link className="button button-secondary seller-listings-action" to="/sell/listings">
+            View my listings <ArrowUpRight size={16} />
           </Link>
         </section>
       ) : stats ? (
@@ -715,37 +793,6 @@ export function QuickListPage() {
         </p>
       </PageHeading>
       {id ? <EditListingForm itemId={id} /> : <CreateListingForm />}
-    </div>
-  );
-}
-
-export function SharedProfilePage({
-  onLogout,
-  logoutError,
-}: {
-  onLogout: () => void;
-  logoutError: string | null;
-}) {
-  return (
-    <div className="storefront-page">
-      <PageHeading kicker="YOUR RESELLO ACCOUNT" title="Your profile" />
-      <section className="profile-card">
-        <span className="profile-verification">
-          <CheckCircle2 size={19} /> Verified PCCOE student
-        </span>
-        <p>Your college account is verified. Your Buy and Sell spaces share one account.</p>
-        <div className="profile-notice">
-          Account settings and profile editing are being added with the next marketplace gate.
-        </div>
-        {logoutError && (
-          <p className="form-error" role="alert">
-            {logoutError}
-          </p>
-        )}
-        <button className="button button-secondary" type="button" onClick={onLogout}>
-          Log out
-        </button>
-      </section>
     </div>
   );
 }

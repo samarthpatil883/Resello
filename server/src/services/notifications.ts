@@ -44,8 +44,35 @@ function toNotificationRecord(notification: {
 
 async function createNotifications(notifications: NewNotification[]) {
   if (notifications.length === 0) return;
+  const recipientIds = [...new Set(notifications.map(({ recipientId }) => recipientId.toString()))];
+  const users = await User.find({ _id: { $in: recipientIds } })
+    .select('_id notificationPreferences')
+    .lean();
+  const preferencesByUser = new Map(
+    users.map((user) => [user._id.toString(), user.notificationPreferences]),
+  );
+  const enabledNotifications = notifications.filter((notification) => {
+    const preferences = preferencesByUser.get(notification.recipientId.toString());
+    if (!preferences) return false;
+    switch (notification.type) {
+      case NotificationType.ORDER_PLACED:
+      case NotificationType.ORDER_CONFIRMED:
+      case NotificationType.ORDER_COMPLETED:
+      case NotificationType.ORDER_CANCELLED:
+      case NotificationType.PAYMENT_RECEIVED:
+      case NotificationType.NEW_MESSAGE:
+        return preferences.orderUpdates;
+      case NotificationType.NEW_LISTING:
+        return preferences.marketplaceUpdates;
+      case NotificationType.NEW_REVIEW:
+        return preferences.reviewUpdates;
+      default:
+        return preferences.accountUpdates;
+    }
+  });
+  if (enabledNotifications.length === 0) return;
   await Notification.bulkWrite(
-    notifications.map((notification) => ({
+    enabledNotifications.map((notification) => ({
       updateOne: {
         filter: {
           recipientId: notification.recipientId,

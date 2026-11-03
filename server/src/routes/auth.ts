@@ -1,11 +1,12 @@
 import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 import { Router } from 'express';
+import multer from 'multer';
 import rateLimit from 'express-rate-limit';
 import bcrypt from 'bcryptjs';
 import type { Response } from 'express';
 import jwt, { type JwtPayload } from 'jsonwebtoken';
 import { z } from 'zod';
-import { Mode, OtpPurpose, PickupPreference } from '@resello/shared';
+import { Mode, OtpPurpose, PickupPreference, type NotificationPreferences } from '@resello/shared';
 import { env } from '../config/env';
 import { requireAuth } from '../middleware/auth';
 import { asyncHandler, getAuthenticatedUser, HttpError } from '../middleware/errors';
@@ -31,6 +32,35 @@ function createAuthRateLimit() {
 
 const authRateLimit = createAuthRateLimit();
 const otpIssueRateLimit = createAuthRateLimit();
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+const avatarTypes = ['image/jpeg', 'image/png', 'image/webp'] as const;
+type AvatarContentType = (typeof avatarTypes)[number];
+const uploadAvatar = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_AVATAR_BYTES, files: 1 },
+  fileFilter: (_req, file, callback) => {
+    if (!avatarTypes.includes(file.mimetype as AvatarContentType)) {
+      callback(new HttpError(400, 'UNSUPPORTED_IMAGE_TYPE', 'Choose a JPEG, PNG, or WebP image.'));
+      return;
+    }
+    callback(null, true);
+  },
+});
+
+function isValidAvatar(contentType: string, data: Buffer): contentType is AvatarContentType {
+  if (contentType === 'image/jpeg')
+    return data.length >= 3 && data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff;
+  if (contentType === 'image/png')
+    return data
+      .subarray(0, 8)
+      .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  return (
+    contentType === 'image/webp' &&
+    data.length >= 12 &&
+    data.toString('ascii', 0, 4) === 'RIFF' &&
+    data.toString('ascii', 8, 12) === 'WEBP'
+  );
+}
 
 function publicUser(user: UserDocument) {
   return {
@@ -44,6 +74,11 @@ function publicUser(user: UserDocument) {
     campusLocation: user.campusLocation,
     pickupPreference: user.pickupPreference,
     phone: user.phone,
+    department: user.department,
+    graduationYear: user.graduationYear,
+    bio: user.bio,
+    avatarUrl: user.avatarUpdatedAt ? `/api/me/avatar?v=${user.avatarUpdatedAt.getTime()}` : null,
+    notificationPreferences: user.notificationPreferences,
     isSuspended: user.isSuspended,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
@@ -232,6 +267,42 @@ router.post(
 );
 
 router.post(
+  '/auth/change-password',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const body = z
+      .object({
+        currentPassword: z.string().min(1).max(128),
+        newPassword: z.string().min(10).max(128),
+      })
+      .strict()
+      .parse(req.body);
+    if (body.currentPassword === body.newPassword) {
+      throw new HttpError(
+        400,
+        'PASSWORD_UNCHANGED',
+        'Choose a new password that is different from your current password.',
+      );
+    }
+
+    const sessionUser = getAuthenticatedUser(req);
+    const user = await User.findById(sessionUser._id).select(
+      '+passwordHash +authVersion +refreshTokenHash',
+    );
+    if (!user || !(await bcrypt.compare(body.currentPassword, user.passwordHash))) {
+      throw new HttpError(400, 'CURRENT_PASSWORD_INCORRECT', 'Your current password is incorrect.');
+    }
+
+    user.passwordHash = await bcrypt.hash(body.newPassword, 12);
+    user.authVersion += 1;
+    user.refreshTokenHash = null;
+    await user.save();
+    await issueSession(user, res);
+    res.json({ message: 'Password changed successfully.' });
+  }),
+);
+
+router.post(
   '/auth/refresh',
   asyncHandler(async (req, res) => {
     const token = req.cookies?.refreshToken as string | undefined;
@@ -339,6 +410,112 @@ router.post(
 router.get('/auth/me', requireAuth, (req, res) => {
   res.json({ user: publicUser(getAuthenticatedUser(req)), badgeCounts: { buy: 0, sell: 0 } });
 });
+
+const profileSchema = z
+  .object({
+    name: z.string().trim().min(2).max(80).optional(),
+    department: z.string().trim().max(100).nullable().optional(),
+    graduationYear: z.number().int().min(2000).max(2100).nullable().optional(),
+    bio: z.string().trim().max(180).nullable().optional(),
+    phone: z.string().trim().max(25).nullable().optional(),
+  })
+  .strict()
+  .refine((profile) => Object.keys(profile).length > 0, 'Update at least one profile field.');
+
+router.patch(
+  '/me/profile',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const changes = profileSchema.parse(req.body);
+    const user = getAuthenticatedUser(req);
+    if (changes.name !== undefined) user.name = changes.name;
+    if (changes.department !== undefined) user.department = changes.department || null;
+    if (changes.graduationYear !== undefined) user.graduationYear = changes.graduationYear;
+    if (changes.bio !== undefined) user.bio = changes.bio || null;
+    if (changes.phone !== undefined) user.phone = changes.phone || null;
+    await user.save();
+    res.json({ user: publicUser(user) });
+  }),
+);
+
+router.get(
+  '/me/avatar',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const user = getAuthenticatedUser(req);
+    const avatar = await User.findById(user._id).select('+avatarData +avatarContentType');
+    if (!avatar?.avatarData || !avatar.avatarContentType) {
+      throw new HttpError(404, 'AVATAR_NOT_FOUND', 'No profile photo has been uploaded.');
+    }
+    res
+      .set('Cache-Control', 'private, no-store')
+      .set('X-Content-Type-Options', 'nosniff')
+      .type(avatar.avatarContentType)
+      .send(avatar.avatarData);
+  }),
+);
+
+router.post(
+  '/me/avatar',
+  requireAuth,
+  uploadAvatar.single('avatar'),
+  asyncHandler(async (req, res) => {
+    const file = req.file;
+    if (!file) throw new HttpError(400, 'AVATAR_REQUIRED', 'Choose a profile photo to upload.');
+    if (!isValidAvatar(file.mimetype, file.buffer)) {
+      throw new HttpError(400, 'INVALID_IMAGE', 'The selected file is not a valid image.');
+    }
+    const user = getAuthenticatedUser(req);
+    const updatedUser = await User.findById(user._id);
+    if (!updatedUser)
+      throw new HttpError(404, 'USER_NOT_FOUND', 'Your account could not be found.');
+    updatedUser.avatarData = file.buffer;
+    updatedUser.avatarContentType = file.mimetype;
+    updatedUser.avatarUpdatedAt = new Date();
+    await updatedUser.save();
+    res.json({ user: publicUser(updatedUser) });
+  }),
+);
+
+router.delete(
+  '/me/avatar',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const sessionUser = getAuthenticatedUser(req);
+    const user = await User.findById(sessionUser._id);
+    if (!user) throw new HttpError(404, 'USER_NOT_FOUND', 'Your account could not be found.');
+    user.avatarData = null;
+    user.avatarContentType = null;
+    user.avatarUpdatedAt = null;
+    await user.save();
+    res.json({ user: publicUser(user) });
+  }),
+);
+
+const notificationPreferencesSchema = z
+  .object({
+    orderUpdates: z.boolean(),
+    marketplaceUpdates: z.boolean(),
+    reviewUpdates: z.boolean(),
+    accountUpdates: z.boolean(),
+  })
+  .strict();
+
+router.get('/me/notification-preferences', requireAuth, (req, res) => {
+  res.json({ preferences: getAuthenticatedUser(req).notificationPreferences });
+});
+
+router.put(
+  '/me/notification-preferences',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const preferences = notificationPreferencesSchema.parse(req.body) as NotificationPreferences;
+    const user = getAuthenticatedUser(req);
+    user.notificationPreferences = preferences;
+    await user.save();
+    res.json({ preferences: user.notificationPreferences });
+  }),
+);
 
 router.patch(
   '/me/mode',

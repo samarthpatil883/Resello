@@ -240,9 +240,12 @@ States: `ACTIVE` (normal) · `PENDING` ("Reserved — someone is buying this") �
 Tabs Active / Completed / Cancelled. Detail timeline: **Placed → Confirmed by seller → Completed**
 (or Cancelled). After campus handover, the buyer and seller each approve completion from their own order view.
 The order becomes `COMPLETED` and its listing becomes `SOLD` only after both approvals are recorded.
+For a non-cancelled order, show the buyer the seller's name and verified college email, plus phone, department
+and pickup preference when provided, so they can coordinate the purchase. Return these details only in the
+authenticated buyer's order response; seller-side orders and cancelled orders must not include them.
 Buttons: Message seller, approve completion, Rate seller (only after `COMPLETED`), Cancel (only while `PLACED`
-and before either participant approves completion), and **Download invoice**. Buyers can download a PDF order
-record for their own orders, including cancelled orders. It includes buyer/seller identity, the seller's phone
+and before either participant approves completion), and **Download invoice** (shown only after `COMPLETED`).
+Buyers can download a PDF order record only for their fully completed orders. It includes buyer/seller identity, the seller's phone
 number and campus pickup preference when provided, buyer handover notes, order and item details, quantity, order
 status, COD payment status, and the amount in rupees. The PDF uses the public Supabase Storage logo configured
 by `INVOICE_LOGO_URL` and the canonical application URL configured by `INVOICE_APP_URL`; development may use the
